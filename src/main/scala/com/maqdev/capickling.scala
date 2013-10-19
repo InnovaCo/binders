@@ -1,4 +1,4 @@
-package com.maqdev.capickling
+package com.maqdev
 
 import scala.language.implicitConversions
 
@@ -6,8 +6,6 @@ package object capickling {
   implicit def pickleFormat/*(implicit out: BoundStatement): CassandraPickleFormat*/ = new CassandraPickleFormat
   implicit def toCassandraPickle(value: com.datastax.driver.core.Row): CassandraPickle = CassandraPickle(Some(value))
 }
-
-package capickling {
 
 import scala.pickling._
 import scala.reflect.runtime.universe._
@@ -211,6 +209,4 @@ class CassandraPickleReader(row: Row, val mirror: Mirror, format: CassandraPickl
   def readElement(): PReader = throw new NotImplementedError()
 
   def endCollection(): Unit = {}
-}
-
 }
