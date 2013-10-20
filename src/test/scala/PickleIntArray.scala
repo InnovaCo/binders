@@ -1,22 +1,21 @@
-import com.datastax.driver.core.{Row, ResultSet, BoundStatement}
-import org.mockito.Mockito.{when, verify}
+import com.datastax.driver.core.{Row, BoundStatement}
+import org.scalatest.mock.MockitoSugar.mock
 import org.scalatest.{FlatSpec,Matchers}
 import org.scalatest.mock.MockitoSugar._
+import org.mockito.Mockito.{verify,when}
+import scala.pickling._
 import com.maqdev.capickling._
 import scala.collection.JavaConversions._
 
-class CassandraUnpicklingSpec extends FlatSpec with Matchers {
-
-  case class TestInt(intValue: Int)
-
-  /*"An integer " should " be read from " in {
-    val m = mock[Row]
-    when(m.getInt("intValue")).thenReturn(123456)
-    val t = m.unpickle[TestInt]
-    t.intValue should be(123456)
-  }*/
+class PickleIntArray extends FlatSpec with Matchers {
 
   case class TestArrayInt(arrayInt: Array[Int])
+  "An array of int " should " be bound " in {
+    val m = mock[BoundStatement]
+    TestArrayInt(Array(1,2,3,4,5,6)).pickleTo(m)
+    verify(m).setList("arrayInt", Array(1,2,3,4,5,6).toList)
+  }
+
   "An array of int " should " be read from " in {
     val m = mock[Row]
     when(m.getList("arrayInt", classOf[Int])).thenReturn(List(1,2,3,4,5,6))

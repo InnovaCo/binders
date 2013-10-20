@@ -145,6 +145,7 @@ package capickling {
   }
 
   class CassandraPickleReader(row: Row, val mirror: Mirror, format: CassandraPickleFormat, fieldName: String = "") extends PReader with PickleTools {
+    import scala.collection.JavaConversions._
     private var lastReadTag: FastTypeTag[_] = null
     private val primitives = Map[String, () => Any](
       FastTypeTag.Null.key -> (() => null),
@@ -160,13 +161,13 @@ package capickling {
       FastTypeTag.ScalaString.key -> (() => row.getString(fieldName)),
       FastTypeTag.JavaString.key -> (() => row.getString(fieldName)),
       FastTypeTag.ArrayByte.key -> (() => row.getBytes(fieldName).array()),
-      FastTypeTag.ArrayShort.key -> (() => (row.getList[Short](fieldName, classOf[Short])).toArray),
-      FastTypeTag.ArrayChar.key -> (() => (row.getList[Char](fieldName, classOf[Char])).toArray),
-      FastTypeTag.ArrayInt.key -> (() => (row.getList[Int](fieldName, classOf[Int])).toArray),
-      FastTypeTag.ArrayLong.key -> (() => (row.getList[Long](fieldName, classOf[Long])).toArray),
-      FastTypeTag.ArrayBoolean.key -> (() => (row.getList[Boolean](fieldName, classOf[Boolean])).toArray),
-      FastTypeTag.ArrayFloat.key -> (() => (row.getList[Float](fieldName, classOf[Float])).toArray),
-      FastTypeTag.ArrayDouble.key -> (() => (row.getList[Double](fieldName, classOf[Double])).toArray)
+      FastTypeTag.ArrayShort.key -> (() => (row.getList[Short](fieldName, classOf[Short])).map(_.toShort).toArray),
+      FastTypeTag.ArrayChar.key -> (() => (row.getList[Char](fieldName, classOf[Char])).map(_.toChar).toArray),
+      FastTypeTag.ArrayInt.key -> (() => (row.getList[Int](fieldName, classOf[Int])).map(_.toInt).toArray),
+      FastTypeTag.ArrayLong.key -> (() => (row.getList[Long](fieldName, classOf[Long])).map(_.toLong).toArray),
+      FastTypeTag.ArrayBoolean.key -> (() => (row.getList[Boolean](fieldName, classOf[Boolean])).map(_ == true).toArray),
+      FastTypeTag.ArrayFloat.key -> (() => (row.getList[Float](fieldName, classOf[Float])).map(_.toFloat).toArray),
+      FastTypeTag.ArrayDouble.key -> (() => (row.getList[Double](fieldName, classOf[Double])).map(_.toDouble).toArray)
     )
 
     private def mkNestedReader(fieldName: String) = {
