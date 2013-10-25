@@ -2,7 +2,7 @@ import com.datastax.driver.core.{Session, Cluster, Row, BoundStatement}
 import org.scalatest.mock.MockitoSugar.mock
 import org.scalatest.{FlatSpec,Matchers}
 import org.mockito.Mockito._
-import com.maqdev.capickling._
+import eu.inn.capickling._
 import scala.pickling._
 
 class ConnectionStatementSpec extends FlatSpec with Matchers {

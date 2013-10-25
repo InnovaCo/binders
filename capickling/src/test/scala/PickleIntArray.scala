@@ -4,7 +4,7 @@ import org.scalatest.{FlatSpec,Matchers}
 import org.scalatest.mock.MockitoSugar._
 import org.mockito.Mockito.{verify,when}
 import scala.pickling._
-import com.maqdev.capickling._
+import eu.inn.capickling._
 import scala.collection.JavaConversions._
 
 class PickleIntArray extends FlatSpec with Matchers {

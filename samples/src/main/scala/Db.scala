@@ -1,5 +1,5 @@
 	import scala.pickling._
-	import com.maqdev.capickling._
+	import eu.inn.capickling._
 
 	class Db(session: com.datastax.driver.core.Session) {
 	  // class for binding input/output parameters

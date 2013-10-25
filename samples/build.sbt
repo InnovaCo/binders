@@ -13,4 +13,4 @@ libraryDependencies += "org.scala-lang" %% "scala-pickling" % "0.8.0-SNAPSHOT"
 
 libraryDependencies += "com.datastax.cassandra" % "cassandra-driver-core" % "2.0.0-beta1"
 
-libraryDependencies += "com.maqdev" %% "capickling" % "0.0-SNAPSHOT"
+libraryDependencies += "eu.inn" %% "capickling" % "0.0-SNAPSHOT"

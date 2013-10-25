@@ -1,4 +1,4 @@
-package com.maqdev.capickling
+package eu.inn.capickling
 
 import com.datastax.driver.core._
 import scala.pickling._

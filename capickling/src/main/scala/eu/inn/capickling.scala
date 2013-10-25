@@ -1,4 +1,4 @@
-package com.maqdev
+package eu.inn
 
 import scala.language.implicitConversions
 
@@ -13,9 +13,7 @@ import scala.reflect.runtime.universe._
 import scala.collection.mutable.Stack
 import com.datastax.driver.core.{BoundStatement, Row}
 
-package capickling {
-
-  case class CassandraPickle(value: Option[com.datastax.driver.core.Row]) extends Pickle {
+case class CassandraPickle(value: Option[com.datastax.driver.core.Row]) extends Pickle {
     type ValueType = Option[Row]
     type PickleFormatType = CassandraPickleFormat
   }
@@ -223,5 +221,3 @@ package capickling {
     def put(obj: com.datastax.driver.core.BoundStatement): this.type = { bs = obj; ??? }
     def result = bs
   }
-
-}

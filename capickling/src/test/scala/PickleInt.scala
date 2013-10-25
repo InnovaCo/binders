@@ -3,7 +3,7 @@ import org.scalatest.mock.MockitoSugar.mock
 import org.scalatest.{FlatSpec,Matchers}
 import org.mockito.Mockito._
 import scala.pickling._
-import com.maqdev.capickling._
+import eu.inn.capickling._
 
 class PickleInt extends FlatSpec with Matchers {
 

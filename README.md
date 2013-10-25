@@ -14,7 +14,7 @@ While the usage of CaPickle is simple it is/should be effective because of the p
 Here is the sample of Scala class that is initialized with Cassandra session and allows you to do select/insert of some user data.
 
 	import scala.pickling._
-	import com.maqdev.capickling._
+	import eu.inn.capickling._
 	
 	class Db(session: com.datastax.driver.core.Session) {
 	  case class User(userId: Int, name: String)
