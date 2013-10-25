@@ -1,10 +1,10 @@
 # CaPickling
 
-**CaPickling** is lightweight object mapper for Cassandra statement & results written with support of [Scala Pickling](https://github.com/scala/pickling) for efficient serialization.
+**CaPickling** is lightweight object mapper for Cassandra written with support of [Scala Pickling](https://github.com/scala/pickling) for serialization.
 
-CaPickling is too far from the being ORM. It's just a simple helper for binding to/from Cassandra using [DataStax Java Driver for Cassandra](https://github.com/datastax/java-driver).
+CaPickling is too far from the being ORM. It's just a helper for binding to and from Cassandra data using [DataStax Java Driver for Cassandra](https://github.com/datastax/java-driver).
 
-While the usage of CaPickle is very simple it is/should be very effective because of the power of underlying libraries:
+While the usage of CaPickle is simple it is/should be effective because of the power of underlying libraries:
 
 * Scala Pickling that enables compile time parsing and code generation for serialization/deserialization code instead of using runtime reflection
 * Using prepared statements from DataStax Java Driver
