@@ -8,7 +8,7 @@ import scala.pickling._
 class ConnectionStatementSpec extends FlatSpec with Matchers {
   def fixture = new {
     val cluster = Cluster.builder().addContactPoint("127.0.0.1").build()
-    val session = cluster.connect("capickle_tests")
+    val session = cluster.connect("capickling_tests")
 
     val insert = new ConnectionStatement(session, "insert into users(userId, name) values (10,'maga')")
     insert.execute

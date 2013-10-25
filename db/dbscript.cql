@@ -1,6 +1,6 @@
-create keyspace capickle_tests with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
+create keyspace capickling_tests with replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
 
-use capickle_tests;
+use capickling_tests;
 
 create table users (
 		userId int primary key,

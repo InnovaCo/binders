@@ -1,6 +1,8 @@
 name := "capickling"
 
-version := "1.0-SNAPSHOT"
+version := "0.0-SNAPSHOT"
+
+organization := "com.maqdev"
 
 resolvers ++= Seq("Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/")
 
