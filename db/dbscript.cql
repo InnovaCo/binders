@@ -4,6 +4,7 @@ use capickling_tests;
 
 create table users (
 		userId int primary key,
-		name text
+		name text,
+		created timestamp
 	);
 

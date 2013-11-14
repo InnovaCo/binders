@@ -6,15 +6,25 @@ import eu.inn.capickling._
 import scala.pickling._
 
 class ConnectionStatementSpec extends FlatSpec with Matchers {
+
+  case class dt(d: java.util.Date)
   def fixture = new {
     val cluster = Cluster.builder().addContactPoint("127.0.0.1").build()
     val session = cluster.connect("capickling_tests")
 
-    val insert = new ConnectionStatement(session, "insert into users(userId, name) values (10,'maga')")
-    insert.execute
+    val yesterday = {
+      import java.util._
+      val cal = Calendar.getInstance()
+      cal.setTime(new Date())
+      cal.add(Calendar.DATE, -11)
+      cal.getTime()
+    }
 
-    val insert2 = new ConnectionStatement(session, "insert into users(userId, name) values (11,'alla')")
-    insert2.execute
+    val insert = new ConnectionStatement(session, "insert into users(userId, name, created) values (10,'maga', :d)")
+    insert.executeWith(dt(yesterday))
+
+    val insert2 = new ConnectionStatement(session, "insert into users(userId, name, created) values (11,'alla', :d)")
+    insert2.executeWith(dt(yesterday))
   }
 
   "ConnectionStatement " should " be able to execute command " in {
@@ -30,31 +40,33 @@ class ConnectionStatementSpec extends FlatSpec with Matchers {
     stmt.executeWith(params(10))
   }
 
-  case class User(userId: Int, name: String)
+  case class User(userId: Int, name: String, created: java.util.Date)
 
   "ConnectionStatement " should " be able to select one row " in {
     val f = fixture
-    val stmt = new ConnectionStatement(f.session, "select userId,name from users where userid=10")
+    val stmt = new ConnectionStatement(f.session, "select userId,name,created from users where userid=10")
     val user = stmt.selectOne[User]
 
     assert(user.isDefined)
     assert(user.get.userId == 10)
     assert(user.get.name == "maga")
+    assert(user.get.created == f.yesterday)
   }
 
   "ConnectionStatement " should " be able to select one row with parameters " in {
     val f = fixture
-    val stmt = new ConnectionStatement(f.session, "select userId,name from users where userid=?")
+    val stmt = new ConnectionStatement(f.session, "select userId,name,created from users where userid=?")
     val user = stmt.selectOneWith[params,User](params(11))
 
     assert(user.isDefined)
     assert(user.get.userId == 11)
     assert(user.get.name == "alla")
+    assert(user.get.created == f.yesterday)
   }
 
   "ConnectionStatement " should " be able to select rows " in {
     val f = fixture
-    val stmt = new ConnectionStatement(f.session, "select userId,name from users where userid in (10,11)")
+    val stmt = new ConnectionStatement(f.session, "select userId,name,created from users where userid in (10,11)")
     val users = stmt.select[User]
 
     assert(users.length == 2)
@@ -62,7 +74,7 @@ class ConnectionStatementSpec extends FlatSpec with Matchers {
 
   "ConnectionStatement " should " be able to select 0 rows " in {
     val f = fixture
-    val stmt = new ConnectionStatement(f.session, "select userId,name from users where userid in (12,13)")
+    val stmt = new ConnectionStatement(f.session, "select userId,name,created from users where userid in (12,13)")
     val users = stmt.select[User]
 
     assert(users.length == 0)

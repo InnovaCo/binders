@@ -12,7 +12,15 @@ class ConnectionStatement(session: Session, query: String) {
     session.execute(stmt)
   }
 
+  private def ea(f : BoundStatement => Unit) : ResultSetFuture = {
+    val stmt = new BoundStatement(preparedStatement)
+    f(stmt)
+    session.executeAsync(stmt)
+  }
+
   def execute : ResultSet = e(bs=>{})
+
+  //def executeAsync : ResultSetFuture = ea(bs=>{})
 
   def executeWith[IN: SPickler: FastTypeTag](t: IN) : ResultSet = {
     e(boundStatement => {
