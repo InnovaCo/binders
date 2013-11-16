@@ -7,10 +7,20 @@ import eu.inn.capickling._
 
 class PickleInt extends FlatSpec with Matchers {
 
-  case class TestInt(intValue: Int)
-  "An integer " should " be bound " in {
+  "An integer parameter " should " be bound " in {
     val m = mock[BoundStatement]
-    TestInt(123456).pickleTo(m)
+    val out = new BoundStatementOutput(m)
+    123456.pickleTo(out)
+    890.pickleTo(out)
+    verify(m).setInt(0,123456)
+    verify(m).setInt(1,890)
+  }
+
+  case class TestInt(intValue: Int)
+  "An integer inside case class " should " be bound " in {
+    val m = mock[BoundStatement]
+    val out = new BoundStatementOutput(m)
+    TestInt(123456).pickleTo(out)
     verify(m).setInt("intValue",123456)
   }
 

@@ -11,7 +11,8 @@ class PickleLongSet extends FlatSpec with Matchers {
   case class TestSetLong(setLongSet: Set[Long])
   "A set of long " should " be pickled " in {
     val m = mock[BoundStatement]
-    TestSetLong(Set(1l,2l,3l,4l,5l,6l)).pickleTo(m)
+    val out = new BoundStatementOutput(m)
+    TestSetLong(Set(1l,2l,3l,4l,5l,6l)).pickleTo(out)
     verify(m).setSet("setLongSet", Set(1l,2l,3l,4l,5l,6l))
   }
 

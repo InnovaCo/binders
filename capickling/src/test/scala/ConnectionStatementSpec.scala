@@ -7,7 +7,6 @@ import scala.pickling._
 
 class ConnectionStatementSpec extends FlatSpec with Matchers {
 
-  case class dt(d: java.util.Date)
   def fixture = new {
     val cluster = Cluster.builder().addContactPoint("127.0.0.1").build()
     val session = cluster.connect("capickling_tests")
@@ -20,32 +19,37 @@ class ConnectionStatementSpec extends FlatSpec with Matchers {
       cal.getTime()
     }
 
-    val insert = new ConnectionStatement(session, "insert into users(userId, name, created) values (10,'maga', :d)")
-    insert.executeWith(dt(yesterday))
+    val insert = new ConnectionStatement(session, "insert into users(userId, name, created) values (10,'maga', ?)")
+    insert.query(yesterday)
 
-    val insert2 = new ConnectionStatement(session, "insert into users(userId, name, created) values (11,'alla', :d)")
-    insert2.executeWith(dt(yesterday))
-  }
-
-  "ConnectionStatement " should " be able to execute command " in {
-    val f = fixture
-    val stmt = new ConnectionStatement(f.session, "delete from users where userid=10")
-    stmt.execute
-  }
-
-  case class params(userId: Int)
-  "ConnectionStatement " should " be able to execute with parameters " in {
-    val f = fixture
-    val stmt = new ConnectionStatement(f.session, "delete from users where userid=?")
-    stmt.executeWith(params(10))
+    val insert2 = new ConnectionStatement(session, "insert into users(userId, name, created) values (11,'alla', ?)")
+    insert2.query(yesterday)
   }
 
   case class User(userId: Int, name: String, created: java.util.Date)
 
+  "ConnectionStatement " should " be able to execute command " in {
+    val f = fixture
+    val stmt = new ConnectionStatement(f.session, "delete from users where userid=10")
+    stmt.query
+  }
+
+  "ConnectionStatement " should " be able to execute with parameters " in {
+    val f = fixture
+    val stmt = new ConnectionStatement(f.session, "delete from users where userid=?")
+    stmt.query(10)
+  }
+
+  "ConnectionStatement " should " be able to execute with 2 primitive parameters " in {
+    val f = fixture
+    val stmt = new ConnectionStatement(f.session, "delete from users where userid in(?,?)")
+    stmt.query(10, 11)
+  }
+
   "ConnectionStatement " should " be able to select one row " in {
     val f = fixture
     val stmt = new ConnectionStatement(f.session, "select userId,name,created from users where userid=10")
-    val user = stmt.selectOne[User]
+    val user = stmt.query.unpickleOne[User]
 
     assert(user.isDefined)
     assert(user.get.userId == 10)
@@ -56,7 +60,7 @@ class ConnectionStatementSpec extends FlatSpec with Matchers {
   "ConnectionStatement " should " be able to select one row with parameters " in {
     val f = fixture
     val stmt = new ConnectionStatement(f.session, "select userId,name,created from users where userid=?")
-    val user = stmt.selectOneWith[params,User](params(11))
+    val user = stmt.query(11).unpickleOne[User]
 
     assert(user.isDefined)
     assert(user.get.userId == 11)
@@ -64,10 +68,17 @@ class ConnectionStatementSpec extends FlatSpec with Matchers {
     assert(user.get.created == f.yesterday)
   }
 
+  "ConnectionStatement " should " be able to select two rows with 2 plain parameters " in {
+    val f = fixture
+    val stmt = new ConnectionStatement(f.session, "select userId,name,created from users where userid in(?,?)")
+    val users = stmt.query(10, 11).unpickleAll[User].toSeq
+    assert(users.length == 2)
+  }
+
   "ConnectionStatement " should " be able to select rows " in {
     val f = fixture
     val stmt = new ConnectionStatement(f.session, "select userId,name,created from users where userid in (10,11)")
-    val users = stmt.select[User]
+    val users = stmt.query.unpickleAll[User]
 
     assert(users.length == 2)
   }
@@ -75,7 +86,7 @@ class ConnectionStatementSpec extends FlatSpec with Matchers {
   "ConnectionStatement " should " be able to select 0 rows " in {
     val f = fixture
     val stmt = new ConnectionStatement(f.session, "select userId,name,created from users where userid in (12,13)")
-    val users = stmt.select[User]
+    val users = stmt.query.unpickleAll[User]
 
     assert(users.length == 0)
   }

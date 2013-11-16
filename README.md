@@ -17,17 +17,23 @@ Here is the sample of Scala class that is initialized with Cassandra session and
 	import eu.inn.capickling._
 	
 	class Db(session: com.datastax.driver.core.Session) {
+	  // class for binding input/output parameters
 	  case class User(userId: Int, name: String)
 	
-	  val insertStatement = new ConnectionStatement(session,
+	  lazy val insertStatement = new ConnectionStatement(session,
 	    "insert into users(userid, name) values (?, ?)")
 	
-	  def insertUser(user: User) = insertStatement.executeWith(user)
+	  def insertUser(user: User) = insertStatement.query(user)
 	
-	  val selectAllStatement = new ConnectionStatement(session,
+	  lazy val selectAllStatement = new ConnectionStatement(session,
 	    "select * from users")
 	
-	  def selectAllUsers = selectAllStatement.select[User]
+	  def selectAllUsers = selectAllStatement.query.unpickleAll[User]
+	
+	  lazy val selectUserStatement = new ConnectionStatement(session,
+	    "select * from users where userId = ?")
+	
+	  def selectUser(userId: Int) = selectUserStatement.query(userId).unpickleAll[User]
 	}
  
 And this class could be used like this:
@@ -40,6 +46,8 @@ And this class could be used like this:
 	
 	// select all users (returns an iterator)
     val users = db.selectAllUsers
+    
+    val user1 = db.selectUser(1)
 ## Compilation    
 
 I haven't pushed it into the public artifactory repositaries yet. So it should be used locally. 
@@ -58,4 +66,5 @@ Currently tested and works only with:
 * Scala Pickling 0.8
 * sbt 0.13
 
-I've tested it only with case classes. They shouldn't be defined inside methods — they aren't recognised by pickle/unpickle.
+I've tested it only with case classes and primitive values as input parameters.
+Case classes shouldn't be defined inside methods — they aren't recognised by pickling library.

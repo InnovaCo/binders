@@ -11,7 +11,8 @@ class PickleIntSet extends FlatSpec with Matchers {
   case class TestSetInt(setIntSet: Set[Int])
   "A set of int " should " be bound " in {
     val m = mock[BoundStatement]
-    TestSetInt(Set(1,2,3,4,5,6)).pickleTo(m)
+    val out = new BoundStatementOutput(m)
+    TestSetInt(Set(1,2,3,4,5,6)).pickleTo(out)
     verify(m).setSet("setIntSet", Set(1,2,3,4,5,6))
   }
 

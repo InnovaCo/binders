@@ -11,7 +11,8 @@ class PickleDate extends FlatSpec with Matchers {
   "A date " should " be bound " in {
     val m = mock[BoundStatement]
     val d = yesterday
-    TestDate(d).pickleTo(m)
+    val out = new BoundStatementOutput(m)
+    TestDate(d).pickleTo(out)
     verify(m).setDate("dateValue",d)
   }
 

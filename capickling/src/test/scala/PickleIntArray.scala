@@ -12,7 +12,8 @@ class PickleIntArray extends FlatSpec with Matchers {
   case class TestArrayInt(arrayInt: Array[Int])
   "An array of int " should " be bound " in {
     val m = mock[BoundStatement]
-    TestArrayInt(Array(1,2,3,4,5,6)).pickleTo(m)
+    val out = new BoundStatementOutput(m)
+    TestArrayInt(Array(1,2,3,4,5,6)).pickleTo(out)
     verify(m).setList("arrayInt", Array(1,2,3,4,5,6).toList)
   }
 

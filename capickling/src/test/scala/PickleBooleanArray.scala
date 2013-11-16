@@ -10,7 +10,8 @@ class PickleBooleanArray extends FlatSpec with Matchers {
   case class TestArrayBoolean(arrayBool: Array[Boolean])
   "An array of boolean " should " be bound " in {
     val m = mock[BoundStatement]
-    TestArrayBoolean(Array(true,false,true)).pickleTo(m)
+    val out = new BoundStatementOutput(m)
+    TestArrayBoolean(Array(true,false,true)).pickleTo(out)
     verify(m).setList("arrayBool", Array(true,false,true).toList)
   }
 

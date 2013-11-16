@@ -3,56 +3,103 @@ package eu.inn.capickling
 import com.datastax.driver.core._
 import scala.pickling._
 
-class ConnectionStatement(session: Session, query: String) {
-  val preparedStatement = session.prepare(query)
+class ConnectionStatement(val session: Session, val queryString: String) {
+  val preparedStatement = session.prepare(queryString)
 
-  private def e(f : BoundStatement => Unit) : ResultSet = {
+  private def e(f : BoundStatementOutput => Unit) : ResultSet = {
     val stmt = new BoundStatement(preparedStatement)
-    f(stmt)
+    val bso = new BoundStatementOutput(stmt)
+    f(bso)
     session.execute(stmt)
   }
 
-  private def ea(f : BoundStatement => Unit) : ResultSetFuture = {
-    val stmt = new BoundStatement(preparedStatement)
-    f(stmt)
-    session.executeAsync(stmt)
-  }
+  def query : ResultSet = e(bs=>{})
 
-  def execute : ResultSet = e(bs=>{})
-
-  //def executeAsync : ResultSetFuture = ea(bs=>{})
-
-  def executeWith[IN: SPickler: FastTypeTag](t: IN) : ResultSet = {
-    e(boundStatement => {
-        t.pickleTo(boundStatement)
+  def query[IN: SPickler: FastTypeTag](t: IN) : ResultSet = {
+    e(bso => {
+      t.pickleTo(bso)
     })
   }
 
-  def selectOne[OUT: Unpickler: FastTypeTag] : Option[OUT] = {
-    val result = execute
-    if (!result.isExhausted)
-      Some(result.one.unpickle[OUT])
-    else
-      None
+  def query[IN0: SPickler: FastTypeTag, IN1: SPickler: FastTypeTag](t0: IN0, t1: IN1) : ResultSet = {
+    e(bso => {
+      t0.pickleTo(bso)
+      t1.pickleTo(bso)
+    })
   }
 
-  def select[OUT: Unpickler: FastTypeTag] : Iterator[OUT] = {
-    val iterator = execute.iterator()
-    import scala.collection.JavaConversions._
-    iterator.map { row => row.unpickle[OUT] }
+  def query[
+    IN0: SPickler: FastTypeTag,
+    IN1: SPickler: FastTypeTag,
+    IN2: SPickler: FastTypeTag](t0: IN0, t1: IN1, t2: IN1) : ResultSet = {
+    e(bso => {
+      t0.pickleTo(bso)
+      t1.pickleTo(bso)
+      t2.pickleTo(bso)
+    })
   }
 
-  def selectOneWith[IN: SPickler: FastTypeTag, OUT: Unpickler: FastTypeTag](in: IN) : Option[OUT] = {
-    val result = executeWith[IN](in)
-    if (!result.isExhausted)
-      Some(result.one.unpickle[OUT])
-    else
-      None
+  def query[
+  IN0: SPickler: FastTypeTag,
+  IN1: SPickler: FastTypeTag,
+  IN2: SPickler: FastTypeTag,
+  IN3: SPickler: FastTypeTag](t0: IN0, t1: IN1, t2: IN1, t3: IN3) : ResultSet = {
+    e(bso => {
+      t0.pickleTo(bso)
+      t1.pickleTo(bso)
+      t2.pickleTo(bso)
+      t3.pickleTo(bso)
+    })
   }
 
-  def selectWith[IN: SPickler: FastTypeTag, OUT: Unpickler: FastTypeTag](in: IN) : Iterator[OUT] = {
-    val iterator = executeWith[IN](in).iterator()
-    import scala.collection.JavaConversions._
-    iterator.map { row => row.unpickle[OUT] }
+  def query[
+  IN0: SPickler: FastTypeTag,
+  IN1: SPickler: FastTypeTag,
+  IN2: SPickler: FastTypeTag,
+  IN3: SPickler: FastTypeTag,
+  IN4: SPickler: FastTypeTag](t0: IN0, t1: IN1, t2: IN1, t3: IN3, t4: IN4) : ResultSet = {
+    e(bso => {
+      t0.pickleTo(bso)
+      t1.pickleTo(bso)
+      t2.pickleTo(bso)
+      t3.pickleTo(bso)
+      t4.pickleTo(bso)
+    })
+  }
+
+  def query[
+  IN0: SPickler: FastTypeTag,
+  IN1: SPickler: FastTypeTag,
+  IN2: SPickler: FastTypeTag,
+  IN3: SPickler: FastTypeTag,
+  IN4: SPickler: FastTypeTag,
+  IN5: SPickler: FastTypeTag](t0: IN0, t1: IN1, t2: IN1, t3: IN3, t4: IN4, t5: IN5) : ResultSet = {
+    e(bso => {
+      t0.pickleTo(bso)
+      t1.pickleTo(bso)
+      t2.pickleTo(bso)
+      t3.pickleTo(bso)
+      t4.pickleTo(bso)
+      t5.pickleTo(bso)
+    })
+  }
+
+  def query[
+  IN0: SPickler: FastTypeTag,
+  IN1: SPickler: FastTypeTag,
+  IN2: SPickler: FastTypeTag,
+  IN3: SPickler: FastTypeTag,
+  IN4: SPickler: FastTypeTag,
+  IN5: SPickler: FastTypeTag,
+  IN6: SPickler: FastTypeTag](t0: IN0, t1: IN1, t2: IN1, t3: IN3, t4: IN4, t5: IN5, t6: IN6) : ResultSet = {
+    e(bso => {
+      t0.pickleTo(bso)
+      t1.pickleTo(bso)
+      t2.pickleTo(bso)
+      t3.pickleTo(bso)
+      t4.pickleTo(bso)
+      t5.pickleTo(bso)
+      t6.pickleTo(bso)
+    })
   }
 }
