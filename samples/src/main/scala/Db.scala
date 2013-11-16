@@ -18,5 +18,5 @@ class Db(session: com.datastax.driver.core.Session) {
   lazy val selectUserStatement = new ConnectionStatement(session,
     "select * from users where userId = ?")
 
-  def selectUser(userId: Int) = selectUserStatement.query(userId).unpickleAll[User]
+  def selectUser(userId: Int) = selectUserStatement.query(userId).unpickleOne[User]
 }
