@@ -4,6 +4,7 @@ import scala.pickling._
 import scala.reflect.runtime.universe._
 import scala.collection.mutable.Stack
 import com.datastax.driver.core.{BoundStatement, Row}
+import scala.reflect.runtime._
 
 case class CassandraPickle(value: Option[com.datastax.driver.core.Row]) extends Pickle {
   type ValueType = Option[Row]
@@ -24,7 +25,8 @@ class CassandraPickleBuilder(format: CassandraPickleFormat, out: BoundStatementO
   import scala.collection.JavaConversions._
 
   private val boundStatement: BoundStatement = out.result
-  private var index = out.nextIndex;
+  private var index: Int = out.nextIndex;
+  private var levelSome: Int = 0
 
   private def nextIndex = {
     val prevIndex = index
@@ -44,6 +46,10 @@ class CassandraPickleBuilder(format: CassandraPickleFormat, out: BoundStatementO
 
   private val primitives =
       Map[String, (Any => Any, Any => Any)](
+        "scala.None.type" -> (
+          (picklee: Any) => nextIndex,
+          (picklee: Any) => popName
+        ),
         FastTypeTag.Null.key -> (
           (picklee: Any) => nextIndex,
           (picklee: Any) => popName
@@ -135,7 +141,12 @@ class CassandraPickleBuilder(format: CassandraPickleFormat, out: BoundStatementO
       else {
         primitives(hints.tag.key)._2(picklee)
       }
-    } /*else {
+    }
+    else
+      if(hints.tag.key.startsWith("scala.Some[")) {
+        levelSome += 1;
+    }
+     /*else {
       throw new IllegalArgumentException("Couldn't pickle " + hints.tag.key)
     }*/
   })
@@ -152,13 +163,17 @@ class CassandraPickleBuilder(format: CassandraPickleFormat, out: BoundStatementO
   }
 
   def putField(name: String, pickler: PBuilder => Unit): PBuilder = {
-    names.push(name)
+    if (levelSome <= 0) {
+      names.push(name) // if levelSome > 1 then is always Option field 'x', this has no meaning
+    }
     pickler(this)
     this
   }
 
   def endEntry(): Unit = {
     if (primitives.contains(tags.pop().key)) () // do nothing
+    if (levelSome > 0)
+      levelSome -= 1;
   }
 
   def beginCollection(length: Int): PBuilder = throw new UnsupportedOperationException("Collections aren't supported")
@@ -199,6 +214,15 @@ class CassandraPickleBuilder(format: CassandraPickleFormat, out: BoundStatementO
     endEntry()
   }
 
+  def pickleNullable[T](picklee: Option[T]) {
+    if (picklee.isDefined) {
+      beginEntry(picklee.get)
+    }
+    if (useIndex)
+      nextIndex
+    else
+      popName
+  }
 }
 
 class CassandraPickleReader(row: Row, val mirror: Mirror, format: CassandraPickleFormat, fieldName: String = "") extends PReader with PickleTools {
@@ -254,10 +278,23 @@ class CassandraPickleReader(row: Row, val mirror: Mirror, format: CassandraPickl
     lastReadTag
   }
 
-  def atPrimitive: Boolean = primitives.contains(lastReadTag.key)
+  def atPrimitive: Boolean = primitives.contains(lastReadTag.key) || lastReadTag.key.startsWith("scala.Option[")
 
   def readPrimitive(): Any = {
-    primitives(lastReadTag.key)()
+
+    // sad dirty hack to read Option[T] :(
+    if (lastReadTag.key.startsWith("scala.Option[")) {
+      if (row.isNull(fieldName))
+        None
+      else {
+        val s1 = lastReadTag.key.substring("scala.Option[".length)
+        val key = s1.substring(0, s1.length-1)
+        Some(primitives(key)())
+      }
+    }
+    else {
+      primitives(lastReadTag.key)()
+    }
   }
 
   def atObject: Boolean = !atPrimitive
