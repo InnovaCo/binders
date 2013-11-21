@@ -17,14 +17,14 @@ trait DbPicklingSerializer {
     val setters = extractSetters[T]
     // println("setters: " + setters)
 
-    val wholeParamType = weakTypeOf[F].termSymbol
+    val wholeParamType = from.symbol
     val v = ValDef(Modifiers(), newTermName("obj"), TypeTree(), from)
 
-    println(wholeParamType)
+    // println(wholeParamType)
 
     val wholeParamSetter = findSetter(true, setters, wholeParamType)
 
-    println (wholeParamSetter)
+    // println (wholeParamSetter)
     val listOfCalls : List[Tree] = wholeParamSetter match {
       case m: MethodSymbol => {
         List(Apply(Select(to,TermName(m.name.decoded)),
@@ -49,7 +49,7 @@ trait DbPicklingSerializer {
     }
 
     val block = Block(listOfCalls, Literal(Constant()))
-    println(block)
+    // println(block)
     block
   }
 
@@ -57,32 +57,10 @@ trait DbPicklingSerializer {
 
     var exactMatch: Option[MethodSymbol] = None
     var baseMatch: Option[MethodSymbol] = None
-
-    try {
-      println(parameter.typeSignature.getClass.getName)
-    val (isRecursive, tpe) = parameter.typeSignature match {
-      case TypeRef(_, t, args) =>
-        println("YAHOO " + t + " GG " + args + " " + Math.random())
-      case TypeRef(_, _, _) =>
-        (false, parameter.typeSignature)
-
-      case _ @e => println(e)
-    }
-    println("GOOGLE " + isRecursive + " tpe " + tpe + " " + Math.random())
-    }
-    catch {
-      case t: Throwable =>
-        println(t.getClass.getName)
-        println(t.getMessage)
-    }
-
     for (m <- setters) {
 
       val idxSymbol = m.paramss.head.head; // parameter 1 (index/name)
       val valueSymbol = m.paramss.head(1); // parameter 2 (value)
-
-      println("vs = " + valueSymbol.typeSignature.getClass.getName)
-      //parameter.typeSignature
 
       //println("Comparing " + m + " with type " + valueSymbol.typeSignature + " for parameter " + parameter + " with type " + parameter.typeSignature)
 
