@@ -1,10 +1,10 @@
-package eu.inn
+package eu.inn.internal
 
 import scala.language.reflectiveCalls
 import scala.reflect.macros.Context
 import language.experimental.macros
 
-trait Serializer {
+trait DbPicklingSerializer {
   val c: Context
   import c.universe._
 
@@ -15,83 +15,70 @@ trait Serializer {
     import c.universe.Flag._
 
     val setters = extractSetters[T]
-    //println("setters: " + setters)
+    // println("setters: " + setters)
 
-    val caseClassParams = extractCaseClassParams[F]
+    val wholeParamType = weakTypeOf[F].typeSymbol
+    val v = ValDef(Modifiers(), newTermName("obj"), TypeTree(), from)
 
-    //val x = Apply(Select(to.tree, newTermName("setInt")), List(Literal(Constant(1))))
+    println(wholeParamType)
 
-    val listOfCalls : List[Tree] = caseClassParams.flatMap { parameter =>
-        findSetter(false, setters, parameter).map { setter =>
-        //println("setter for " + parameter + " : " + setter)
+    val wholeParamSetter = findSetter(true, setters, wholeParamType)
 
-          val x = q"""
-            $to.${TermName(setter.name.decoded)}(0, $from.${TermName(parameter.name.decoded)})
-            """
-
-
-          /*val callSetter = Apply(
-            Select(
-              to.tree,
-              newTermName(setter.name.decoded)
-            ),
-            List(Select(
-              from.tree,
-              newTermName(parameter.name.decoded)
-            ))
-          )
-          callSetter */
-          x.asInstanceOf[Tree]
-        }
+    println (wholeParamSetter)
+    val listOfCalls : List[Tree] = wholeParamSetter match {
+      case m: MethodSymbol => {
+        List(Apply(Select(to,TermName(m.name.decoded)),
+          List(Ident("obj"))))
       }
 
-    //val l = for (l <- listOfCalls; if l.isDefined) yield l.get
+      case _ => {
+        val caseClassParams = extractCaseClassParams[F]
 
-    //println(l)
-    //val block = Block(listOfCalls.map(l => c.Expr(l)))
+        List(v) ++ caseClassParams.flatMap { parameter =>
+            // println("looking setter for " + parameter + " in " + setters)
+            findSetter(false, setters, parameter).map { setter =>
 
+              // println("found setter for " + parameter + " : " + setter)
+              Apply(Select(to,TermName(setter.name.decoded)),
+                List(Literal(Constant(parameter.name.decoded)),
+                  Select(Ident("obj"),TermName(parameter.name.decoded)))
+              )
+            }
+          }
+      }
+    }
 
-    val block = Block(listOfCalls.tail, listOfCalls.head)
+    val block = Block(listOfCalls, Literal(Constant()))
     println(block)
-
-    //val tree = l.head.get.tre
-
-    //val f2 = q"""
-    //    { ..$listOfCalls }
-    //  """;
-
-    //val f = Literal(Constant("limit exceeded"))
     block
   }
 
-  def findSetter(byIndex: Boolean, setters: List[c.Symbol], parameter: c.Symbol) : Option[MethodSymbol] = {
-    import c.universe._
+  def findSetter(byIndex: Boolean, setters: List[MethodSymbol], parameter: c.Symbol) : Option[MethodSymbol] = {
 
-    val exactMatch = setters.find(s => {
-      val m = s.asInstanceOf[MethodSymbol]
-      val idxSymbol = m.paramss.head.head // parameter 1 (index/name)
-      val valueSymbol = m.paramss.head(1) // parameter 2 (value)
+    var exactMatch: Option[MethodSymbol] = None
+    var baseMatch: Option[MethodSymbol] = None
 
-      parameter.typeSignature =:= valueSymbol.typeSignature &&
-        (if (byIndex) idxSymbol.typeSignature =:= typeOf[Int] else idxSymbol.typeSignature =:= typeOf[String])
-    }).map(_.asInstanceOf[MethodSymbol])
-
-    if (!exactMatch.isDefined) {
-      setters.find(s => {
-        val m = s.asInstanceOf[MethodSymbol]
-        val idxSymbol = m.paramss.head.head // parameter 1 (index/name)
-        val valueSymbol = m.paramss.head(1) // parameter 2 (value)
-
-        parameter.typeSignature <:< valueSymbol.typeSignature &&
-          (if (byIndex) idxSymbol.typeSignature =:= typeOf[Int] else idxSymbol.typeSignature =:= typeOf[String])
-      }).map(_.asInstanceOf[MethodSymbol])
+    for (m <- setters) {
+      val idxSymbol = m.paramss.head.head; // parameter 1 (index/name)
+      val valueSymbol = m.paramss.head(1); // parameter 2 (value)
+      if (if (byIndex) idxSymbol.typeSignature =:= typeOf[Int] else idxSymbol.typeSignature =:= typeOf[String]) {
+        if (parameter.typeSignature =:= valueSymbol.typeSignature) {
+          exactMatch = Some(m)
+        }
+        else
+        if (parameter.typeSignature <:< valueSymbol.typeSignature) {
+          baseMatch = Some(m)
+        }
+      }
     }
-    else
+
+    if (exactMatch.isDefined)
       exactMatch
+    else
+      baseMatch
   }
 
-  def extractSetters[T: c.WeakTypeTag] : List[c.Symbol] = {
-    import c.universe._
+  def extractSetters[T: c.WeakTypeTag] : List[MethodSymbol] = {
 
     weakTypeOf[T].members.filter(member => member.isMethod &&
       member.name.decoded.startsWith("set") &&
@@ -102,11 +89,10 @@ trait Serializer {
         ( m.paramss.head.head.typeSignature =:= typeOf[Int] ||
           m.paramss.head.head.typeSignature =:= typeOf[String] )
     }
-    ).toList
+    ).map(_.asInstanceOf[MethodSymbol]).toList
   }
 
   def extractCaseClassParams[T: c.WeakTypeTag] : List[c.Symbol] = {
-    import c.universe._
 
     val companioned = weakTypeOf[T].typeSymbol
     val companionSymbol = companioned.companionSymbol
@@ -132,9 +118,6 @@ trait Serializer {
             }
           case _ => None
         }
-
-        //println("Unapply return type:" + unapply.returnType)
-        //println("Unapply return types:" + unapplyReturnTypes)
 
         companionType.declaration(stringToTermName("apply")) match {
           case NoSymbol => c.abort(c.enclosingPosition, "No apply function found")
