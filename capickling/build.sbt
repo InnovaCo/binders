@@ -15,3 +15,5 @@ libraryDependencies += "com.datastax.cassandra" % "cassandra-driver-core" % "2.0
 libraryDependencies += "org.scalatest" % "scalatest_2.10" % "2.0.RC1" % "test"
 
 libraryDependencies += "org.mockito" % "mockito-all" % "1.9.5" % "test"
+
+addCompilerPlugin("org.scala-lang.plugins" % "macro-paradise" % "2.0.0-SNAPSHOT" cross CrossVersion.full)
