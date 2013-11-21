@@ -28,7 +28,9 @@ class TestExperimental extends FlatSpec with Matchers {
 
   "A test " should " do something " in {
 
-    val s = Experimental.serialize(AAA(123456, Some(9l)), new OutputClass)
+    val a = AAA(123456, Some(9l))
+    val out = new OutputClass
+    val s = Experimental.serialize(a, out)
 
     assert(s == "YAHOO")
   }
