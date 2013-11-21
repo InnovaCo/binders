@@ -17,7 +17,7 @@ trait DbPicklingSerializer {
     val setters = extractSetters[T]
     // println("setters: " + setters)
 
-    val wholeParamType = weakTypeOf[F].typeSymbol
+    val wholeParamType = weakTypeOf[F].termSymbol
     val v = ValDef(Modifiers(), newTermName("obj"), TypeTree(), from)
 
     println(wholeParamType)
@@ -58,15 +58,40 @@ trait DbPicklingSerializer {
     var exactMatch: Option[MethodSymbol] = None
     var baseMatch: Option[MethodSymbol] = None
 
+    try {
+      println(parameter.typeSignature.getClass.getName)
+    val (isRecursive, tpe) = parameter.typeSignature match {
+      case TypeRef(_, t, args) =>
+        println("YAHOO " + t + " GG " + args + " " + Math.random())
+      case TypeRef(_, _, _) =>
+        (false, parameter.typeSignature)
+
+      case _ @e => println(e)
+    }
+    println("GOOGLE " + isRecursive + " tpe " + tpe + " " + Math.random())
+    }
+    catch {
+      case t: Throwable =>
+        println(t.getClass.getName)
+        println(t.getMessage)
+    }
+
     for (m <- setters) {
+
       val idxSymbol = m.paramss.head.head; // parameter 1 (index/name)
       val valueSymbol = m.paramss.head(1); // parameter 2 (value)
+
+      println("vs = " + valueSymbol.typeSignature.getClass.getName)
+      //parameter.typeSignature
+
+      //println("Comparing " + m + " with type " + valueSymbol.typeSignature + " for parameter " + parameter + " with type " + parameter.typeSignature)
+
       if (if (byIndex) idxSymbol.typeSignature =:= typeOf[Int] else idxSymbol.typeSignature =:= typeOf[String]) {
         if (parameter.typeSignature =:= valueSymbol.typeSignature) {
           exactMatch = Some(m)
         }
         else
-        if (parameter.typeSignature <:< valueSymbol.typeSignature) {
+        if (parameter.typeSignature weak_<:< valueSymbol.typeSignature) {
           baseMatch = Some(m)
         }
       }
