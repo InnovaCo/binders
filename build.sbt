@@ -1,4 +1,4 @@
-name := "binders.core"
+name := "binders-core"
 
 version := "0.0-SNAPSHOT"
 
