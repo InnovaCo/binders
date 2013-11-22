@@ -10,10 +10,10 @@ object BinderImpl {
 
   def bindInto[F: c.WeakTypeTag, T: c.WeakTypeTag]
     (c: Context)
-    (from: c.Expr[F], to: c.Expr[T]): c.Expr[Unit] = {
+    (from: c.Expr[F], to: c.Expr[T], index: c.Expr[Int]): c.Expr[Unit] = {
 
     val c0: c.type = c
     val bundle = new { val c: c0.type = c0 } with DbPicklingSerializer
-    c.Expr[Unit]((bundle.serialize[F,T](from.tree,to.tree)))
+    c.Expr[Unit]((bundle.serialize[F,T](from.tree, to.tree, index.tree)))
   }
 }

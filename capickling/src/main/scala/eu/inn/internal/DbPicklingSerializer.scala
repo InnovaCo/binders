@@ -8,7 +8,7 @@ trait DbPicklingSerializer {
   val c: Context
   import c.universe._
 
-  def serialize[F: c.WeakTypeTag, T: c.WeakTypeTag] (from: c.Tree, to: c.Tree): c.Tree = {
+  def serialize[F: c.WeakTypeTag, T: c.WeakTypeTag] (from: c.Tree, to: c.Tree, index: c.Tree): c.Tree = {
 
     import c.universe._
     import definitions._
@@ -18,23 +18,25 @@ trait DbPicklingSerializer {
     // println("setters: " + setters)
 
     val wholeParamType = from.symbol
-    val v = ValDef(Modifiers(), newTermName("obj"), TypeTree(), from)
+    val vIndex = ValDef(Modifiers(), newTermName("index"), TypeTree(), index)
+    //val v = ValDef(Modifiers(), newTermName("obj"), TypeTree(), from)
+    val v = reify { val obj = from }.tree
 
     // println(wholeParamType)
 
     val wholeParamSetter = findSetter(true, setters, wholeParamType)
 
-    // println (wholeParamSetter)
+    println (wholeParamSetter)
     val listOfCalls : List[Tree] = wholeParamSetter match {
-      case m: MethodSymbol => {
+      case Some(m) => {
         List(Apply(Select(to,TermName(m.name.decoded)),
-          List(Ident("obj"))))
+          List(Ident("index"), Ident("obj"))))
       }
 
-      case _ => {
+      case None => {
         val caseClassParams = extractCaseClassParams[F]
 
-        List(v) ++ caseClassParams.flatMap { parameter =>
+        caseClassParams.flatMap { parameter =>
             // println("looking setter for " + parameter + " in " + setters)
             findSetter(false, setters, parameter).map { setter =>
 
@@ -48,8 +50,8 @@ trait DbPicklingSerializer {
       }
     }
 
-    val block = Block(listOfCalls, Literal(Constant()))
-    // println(block)
+    val block = Block(List(vIndex, v) ++ listOfCalls, Literal(Constant()))
+    println(block)
     block
   }
 
