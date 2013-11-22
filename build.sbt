@@ -1,4 +1,4 @@
-name := "capickling"
+name := "binders.core"
 
 version := "0.0-SNAPSHOT"
 
