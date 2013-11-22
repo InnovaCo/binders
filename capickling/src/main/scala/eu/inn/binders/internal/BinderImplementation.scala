@@ -8,14 +8,16 @@ private trait BinderImplementation {
   val c: Context
   import c.universe._
 
-  def bind[S: c.WeakTypeTag, O: c.WeakTypeTag] (stmt: c.Tree, index: c.Tree, obj: c.Tree): c.Tree = {
+  def bind[S: c.WeakTypeTag, O: c.WeakTypeTag] (stmt: c.Tree, index: c.Tree, obj: c.Tree, allFields: Boolean): c.Tree = {
 
     val setters = extractSetters[S]
     // println("setters: " + setters)
 
+    val stmtTerm = newTermName(c.fresh("$stmt"))
     val indexTerm = newTermName(c.fresh("$index"))
     val objTerm = newTermName(c.fresh("$obj"))
     val vals = List(
+      ValDef(Modifiers(), stmtTerm, TypeTree(), stmt),
       ValDef(Modifiers(), indexTerm, TypeTree(), index),
       ValDef(Modifiers(), objTerm, TypeTree(), obj)
     )
@@ -26,7 +28,7 @@ private trait BinderImplementation {
     // println (wholeParamSetter)
     val listOfCalls : List[Tree] = wholeParamSetter match {
       case Some(m) => {
-        List(Apply(Select(stmt,TermName(m.name.decoded)),
+        List(Apply(Select(Ident(stmtTerm),TermName(m.name.decoded)),
           List(Ident(indexTerm.decoded), Ident(objTerm.decoded))))
       }
 
@@ -38,10 +40,17 @@ private trait BinderImplementation {
             findSetter(false, setters, parameter).map { setter =>
 
               // println("found setter for " + parameter + " : " + setter)
-              Apply(Select(stmt,TermName(setter.name.decoded)),
+              val setterCall = Apply(Select(Ident(stmtTerm),TermName(setter.name.decoded)),
                 List(Literal(Constant(parameter.name.decoded)),
                   Select(Ident(objTerm.decoded),TermName(parameter.name.decoded)))
               )
+
+              val hasCall = Apply(Select(Ident(stmtTerm), "hasParameter"), List(Literal(Constant(parameter.name.decoded))))
+
+              if (allFields)
+                setterCall
+              else
+                If(hasCall, setterCall, Literal(Constant()))
             }
           }
       }
@@ -120,7 +129,7 @@ private trait BinderImplementation {
       ValDef(Modifiers(), objResultTerm, TypeTree(), applyCall)
     )
     val block = Block(vals, Ident(objResultTerm))
-    println(block)
+    // println(block)
     block
   }
 

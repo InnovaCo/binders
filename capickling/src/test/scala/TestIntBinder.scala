@@ -8,6 +8,10 @@ class TestIntBinder extends FlatSpec with Matchers {
   case class TestInt(intValue1: Int, nullableValue: Option[Int], intValue2: Int)
 
   trait OutputClass {
+    def setLong(index: Int, value: Long)
+    def setLongNullable(index: Int, value: Option[Long])
+    def setLong(name: String, value: Long)
+    def setLongNullable(name: String, value: Option[Long])
     def setInt(index: Int, value: Int)
     def setIntNullable(index: Int, value: Option[Int])
     def setInt(name: String, value: Int)
@@ -24,27 +28,45 @@ class TestIntBinder extends FlatSpec with Matchers {
     def getIntNullable(name: String) : Option[Int]
   }
 
-  "case class with int " should "  be bound to statement by names " in {
+  trait OutputClass2 extends eu.inn.binders.Statement {
+    def setInt(index: Int, value: Int)
+    def setIntNullable(index: Int, value: Option[Int])
+    def setInt(name: String, value: Int)
+    def setIntNullable(name: String, value: Option[Int])
+  }
+
+  "all case class with int " should "  be bound to statement by names " in {
     val m = mock[OutputClass]
-    Binder.bindInto(m, 0, TestInt(123456, Some(555), 7890))
+    Binder.bindAllFields(m, 0, TestInt(123456, Some(555), 7890))
     verify(m).setInt("intValue1",123456)
     verify(m).setIntNullable("nullableValue",Some(555))
     verify(m).setInt("intValue2",7890)
     verifyNoMoreInteractions(m)
   }
 
-  "int parameters " should " be bound to statement by indexes " in {
+  "all int parameters " should " be bound to statement by indexes " in {
     val m = mock[OutputClass]
     val i1 = 123456
     val i2 = Some(555)
     val i3 = 7890
-    Binder.bindInto(m, 0, i1)
-    Binder.bindInto(m, 1, i2)
-    Binder.bindInto(m, 2, i3)
+    Binder.bindAllFields(m, 0, i1)
+    Binder.bindAllFields(m, 1, i2)
+    Binder.bindAllFields(m, 2, i3)
     verify(m).setInt(0,123456)
     verify(m).setIntNullable(1,Some(555))
     verify(m).setInt(2,7890)
     verifyNoMoreInteractions(m)
+  }
+
+  "some case class with int " should "  be bound to statement by names " in {
+    val m = mock[OutputClass2]
+    when(m.hasParameter("intValue1")).thenReturn(true)
+    when(m.hasParameter("nullableValue")).thenReturn(true)
+    when(m.hasParameter("intValue2")).thenReturn(false)
+    Binder.bindExistingFields(m, 0, TestInt(123456, Some(555), 7890))
+    verify(m).setInt("intValue1",123456)
+    verify(m).setIntNullable("nullableValue",Some(555))
+    verify(m, times(0)).setInt("intValue2",7890)
   }
 
   "case class with int " should " be created from row by field names " in {
