@@ -7,48 +7,40 @@ class TestUnbind extends FlatSpec with Matchers {
 
   case class TestInt(intValue1: Int, nullableValue: Option[Int], intValue2: Int)
 
-  trait OutputClass extends eu.inn.binders.Statement {
-    def setLong(index: Int, value: Long)
-    def setLongNullable(index: Int, value: Option[Long])
-    def setLong(name: String, value: Long)
-    def setLongNullable(name: String, value: Option[Long])
-    def setInt(index: Int, value: Int)
-    def setIntNullable(index: Int, value: Option[Int])
-    def setInt(name: String, value: Int)
-    def setIntNullable(name: String, value: Option[Int])
+  trait InputClass extends eu.inn.binders.Row {
+    def getInt(name: String) : Int
+    def getIntNullable(name: String) : Option[Int]
   }
 
-  "all case class with int " should "  be bound to statement by names " in {
-    val m = mock[OutputClass]
-    m.bind(0, TestInt(123456, Some(555), 7890))
-    verify(m).setInt("intValue1",123456)
-    verify(m).setIntNullable("nullableValue",Some(555))
-    verify(m).setInt("intValue2",7890)
-    verifyNoMoreInteractions(m)
+  "case class with int " should " be created from row by field names" in {
+    val m = mock[InputClass]
+    when(m.getInt("intValue1")).thenReturn(123456)
+    when(m.getIntNullable("nullableValue")).thenReturn(Some(555))
+    when(m.getInt("intValue2")).thenReturn(789)
+    val t = m.unbind[TestInt]
+    assert(t === TestInt(123456,Some(555), 789))
   }
 
-  "all int parameters " should " be bound to statement by indexes " in {
-    val m = mock[OutputClass]
-    val i1 = 123456
-    val i2 = Some(555)
-    val i3 = 7890
-    m.bind(0, i1)
-    m.bind(1, i2)
-    m.bind(2, i3)
-    verify(m).setInt(0,123456)
-    verify(m).setIntNullable(1,Some(555))
-    verify(m).setInt(2,7890)
-    verifyNoMoreInteractions(m)
+  "case class with int " should " be created from row by field names implicitly" in {
+    val m = mock[InputClass]
+    when(m.getInt("intValue1")).thenReturn(123456)
+    when(m.getIntNullable("nullableValue")).thenReturn(Some(555))
+    when(m.getInt("intValue2")).thenReturn(789)
+    val t = m.unbind[TestInt]
+    assert(t === TestInt(123456,Some(555), 789))
   }
 
-  "some case class with int " should "  be bound to statement by names " in {
-    val m = mock[OutputClass]
-    when(m.hasParameter("intValue1")).thenReturn(true)
-    when(m.hasParameter("nullableValue")).thenReturn(true)
-    when(m.hasParameter("intValue2")).thenReturn(false)
-    m.bindPartial(0, TestInt(123456, Some(555), 7890))
-    verify(m).setInt("intValue1",123456)
-    verify(m).setIntNullable("nullableValue",Some(555))
-    verify(m, times(0)).setInt("intValue2",7890)
+
+  "case class with int " should " be filled from row by field names and copied" in {
+    val m = mock[InputClass]
+    when(m.getInt("intValue1")).thenReturn(123456)
+    when(m.getIntNullable("nullableValue")).thenReturn(Some(555))
+    when(m.getInt("intValue2")).thenThrow(new RuntimeException("There is no field intValue2 in a row"))
+    when(m.hasField("intValue1")).thenReturn(true)
+    when(m.hasField("nullableValue")).thenReturn(true)
+    when(m.hasField("intValue2")).thenReturn(false)
+    val t1 = TestInt(0,Some(0),7890)
+    val t = m.unbindPartial(t1)
+    assert(t === TestInt(123456,Some(555), 7890))
   }
 }

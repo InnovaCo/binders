@@ -17,6 +17,8 @@ class TestBind extends FlatSpec with Matchers {
     def setInt(name: String, value: Int)
     def setIntNullable(name: String, value: Option[Int])
   }
+  
+  
 
   "all case class with int " should "  be bound to statement by names " in {
     val m = mock[OutputClass]
