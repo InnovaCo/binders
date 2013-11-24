@@ -8,16 +8,18 @@ private trait BinderImplementation {
   val c: Context
   import c.universe._
 
-  def bind[S: c.WeakTypeTag, O: c.WeakTypeTag] (stmt: c.Tree, index: c.Tree, obj: c.Tree, allFields: Boolean): c.Tree = {
+  def bind[S: c.WeakTypeTag, O: c.WeakTypeTag] (index: c.Tree, obj: c.Tree, allFields: Boolean): c.Tree = {
 
     val setters = extractSetters[S]
     // println("setters: " + setters)
 
+    val thisTerm = TermName(c.fresh("$this"))
     val stmtTerm = newTermName(c.fresh("$stmt"))
     val indexTerm = newTermName(c.fresh("$index"))
     val objTerm = newTermName(c.fresh("$obj"))
     val vals = List(
-      ValDef(Modifiers(), stmtTerm, TypeTree(), stmt),
+      ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
+      ValDef(Modifiers(), stmtTerm, TypeTree(), Select(Ident(thisTerm), TermName("stmt"))),
       ValDef(Modifiers(), indexTerm, TypeTree(), index),
       ValDef(Modifiers(), objTerm, TypeTree(), obj)
     )
@@ -61,7 +63,7 @@ private trait BinderImplementation {
     block
   }
 
-  def createFrom[R: c.WeakTypeTag, O: c.WeakTypeTag] (row: c.Tree): c.Tree = {
+  def unbind[R: c.WeakTypeTag, O: c.WeakTypeTag] : c.Tree = {
 
     val getters = extractGetters[R]
     // println("getters: " + getters)
@@ -69,8 +71,9 @@ private trait BinderImplementation {
     val caseClassParams = extractCaseClassParams[O]
     // println(caseClassParams)
 
-    val rowTerm = newTermName(c.fresh("$row"))
-    val objTerm = newTermName(c.fresh("$obj"))
+    val thisTerm = TermName(c.fresh("$this"))
+    val rowTerm = TermName(c.fresh("$row"))
+    val objTerm = TermName(c.fresh("$obj"))
 
     val applyParams =
       caseClassParams.map { parameter =>
@@ -84,15 +87,16 @@ private trait BinderImplementation {
     val applyCall = Apply(Select(Ident(outputCompanionSymbol.name), "apply"),applyParams)
 
     val vals = List(
-      ValDef(Modifiers(), rowTerm, TypeTree(), row),
+      ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
+      ValDef(Modifiers(), rowTerm, TypeTree(), Select(Ident(thisTerm), TermName("row"))),
       ValDef(Modifiers(), objTerm, TypeTree(), applyCall)
     )
     val block = Block(vals, Ident(objTerm))
-    // println(block)
+    println(block)
     block
   }
 
-  def fillFrom[R: c.WeakTypeTag, O: c.WeakTypeTag] (row: c.Tree, obj: c.Tree): c.Tree = {
+  def unbindPartial[R: c.WeakTypeTag, O: c.WeakTypeTag] (obj: c.Tree): c.Tree = {
 
     val getters = extractGetters[R]
     // println("getters: " + getters)
@@ -100,6 +104,7 @@ private trait BinderImplementation {
     val caseClassParams = extractCaseClassParams[O]
     // println(caseClassParams)
 
+    val thisTerm = TermName(c.fresh("$this"))
     val rowTerm = newTermName(c.fresh("$row"))
     val objResultTerm = newTermName(c.fresh("$obj"))
     val objOrigTerm = newTermName(c.fresh("$objOrig"))
@@ -124,12 +129,13 @@ private trait BinderImplementation {
     val applyCall = Apply(Select(Ident(outputCompanionSymbol.name), "apply"),applyParams)
 
     val vals = List(
-      ValDef(Modifiers(), rowTerm, TypeTree(), row),
+      ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
+      ValDef(Modifiers(), rowTerm, TypeTree(), Select(Ident(thisTerm), TermName("row"))),
       ValDef(Modifiers(), objOrigTerm, TypeTree(), obj),
       ValDef(Modifiers(), objResultTerm, TypeTree(), applyCall)
     )
     val block = Block(vals, Ident(objResultTerm))
-    // println(block)
+    println(block)
     block
   }
 

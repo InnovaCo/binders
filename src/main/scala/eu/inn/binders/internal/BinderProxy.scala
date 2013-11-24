@@ -8,39 +8,38 @@ object BinderProxy {
 
   import scala.reflect.runtime.{universe => ru}
 
-  def bindAllFields[S: c.WeakTypeTag, O: c.WeakTypeTag]
+  def bind[S: c.WeakTypeTag, O: c.WeakTypeTag]
     (c: Context)
-    (stmt: c.Expr[S], index: c.Expr[Int], obj: c.Expr[O]): c.Expr[Unit] = {
+    (index: c.Expr[Int], obj: c.Expr[O]): c.Expr[Unit] = {
 
     val c0: c.type = c
     val bundle = new { val c: c0.type = c0 } with BinderImplementation
-    c.Expr[Unit](bundle.bind[S,O](stmt.tree, index.tree, obj.tree, true))
+    c.Expr[Unit](bundle.bind[S,O](index.tree, obj.tree, true))
   }
 
-  def bindExistingFields[S: c.WeakTypeTag, O: c.WeakTypeTag]
+  def bindPartial[S: c.WeakTypeTag, O: c.WeakTypeTag]
   (c: Context)
-  (stmt: c.Expr[S], index: c.Expr[Int], obj: c.Expr[O]): c.Expr[Unit] = {
+  (index: c.Expr[Int], obj: c.Expr[O]): c.Expr[Unit] = {
 
     val c0: c.type = c
     val bundle = new { val c: c0.type = c0 } with BinderImplementation
-    c.Expr[Unit](bundle.bind[S,O](stmt.tree, index.tree, obj.tree, false))
+    c.Expr[Unit](bundle.bind[S,O](index.tree, obj.tree, false))
   }
 
-  def createFrom[R: c.WeakTypeTag, O: c.WeakTypeTag]
-  (c: Context)
-  (row: c.Expr[R]) : c.Expr[O] = {
+  def unbind[R: c.WeakTypeTag, O: c.WeakTypeTag]
+  (c: Context) : c.Expr[O] = {
 
     val c0: c.type = c
     val bundle = new { val c: c0.type = c0 } with BinderImplementation
-    c.Expr[O](bundle.createFrom[R,O](row.tree))
+    c.Expr[O](bundle.unbind[R,O])
   }
 
-  def fillFrom[R: c.WeakTypeTag, O: c.WeakTypeTag]
+  def unbindPartial[R: c.WeakTypeTag, O: c.WeakTypeTag]
   (c: Context)
-  (row: c.Expr[R], obj: c.Expr[O]) : c.Expr[O] = {
+  (obj: c.Expr[O]) : c.Expr[O] = {
 
     val c0: c.type = c
     val bundle = new { val c: c0.type = c0 } with BinderImplementation
-    c.Expr[O](bundle.fillFrom[R,O](row.tree, obj.tree))
+    c.Expr[O](bundle.unbindPartial[R,O](obj.tree))
   }
 }
