@@ -92,7 +92,7 @@ private trait BinderImplementation {
       ValDef(Modifiers(), objTerm, TypeTree(), applyCall)
     )
     val block = Block(vals, Ident(objTerm))
-    println(block)
+    // println(block)
     block
   }
 
@@ -135,7 +135,72 @@ private trait BinderImplementation {
       ValDef(Modifiers(), objResultTerm, TypeTree(), applyCall)
     )
     val block = Block(vals, Ident(objResultTerm))
-    println(block)
+    // println(block)
+    block
+  }
+
+  def unbindOne[RS: c.WeakTypeTag, O: c.WeakTypeTag] : c.Tree = {
+    val thisTerm = TermName(c.fresh("$this"))
+    val rowsTerm = TermName(c.fresh("$rows"))
+    val iteratorTerm = TermName(c.fresh("$iterator"))
+    val objResultTerm = TermName(c.fresh("$result"))
+
+    val hasCall = Select(Ident(iteratorTerm), "hasNext")
+
+    // get first element
+    val nextRowTerm = TermName(c.fresh("$nextRow"))
+    val nextRowCall = Apply(Select(Ident(iteratorTerm), "next"), List())
+    val valsNextItem = List(
+      ValDef(Modifiers(), nextRowTerm, Select(Ident(rowsTerm), TypeName("rowType")), nextRowCall)
+    )
+
+    val unbindCall = Block(valsNextItem,
+      Apply(Select(Ident(weakTypeOf[Some.type].termSymbol), "apply"),
+        List(
+          TypeApply(Select(Ident(nextRowTerm), "unbind"), List(Ident(weakTypeOf[O].typeSymbol)))
+        )
+      )
+    )
+    
+    val none = weakTypeOf[None.type].termSymbol
+    val ifCall = If(hasCall, unbindCall, Ident(none))
+
+    val vals = List(
+      ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
+      ValDef(Modifiers(), rowsTerm, TypeTree(), Select(Ident(thisTerm), TermName("rows"))),
+      ValDef(Modifiers(), iteratorTerm, TypeTree(), Select(Ident(rowsTerm), TermName("iterator"))),
+      ValDef(Modifiers(), objResultTerm, TypeTree(), ifCall)
+    )
+
+    val block = Block(vals, Ident(objResultTerm))
+    // println(block)
+    block
+  }
+
+  def unbindAll[RS: c.WeakTypeTag, O: c.WeakTypeTag] : c.Tree = {
+    val thisTerm = TermName(c.fresh("$this"))
+    val rowsTerm = TermName(c.fresh("$rows"))
+    val rowTerm = TermName(c.fresh("$row"))
+    val iteratorTerm = TermName(c.fresh("$iterator"))
+    val objResultTerm = TermName(c.fresh("$result"))
+
+    val unbindCall = Function(
+      List(ValDef(Modifiers(Flag.PARAM), rowTerm, Select(Ident(rowsTerm), TypeName("rowType")), EmptyTree)),
+      TypeApply(Select(Ident(rowTerm), "unbind"), List(Ident(weakTypeOf[O].typeSymbol)))
+    )
+
+    // map iterator
+    val mapCall = Apply(Select(Ident(iteratorTerm), "map"), List(unbindCall))
+
+    val vals = List(
+      ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
+      ValDef(Modifiers(), rowsTerm, TypeTree(), Select(Ident(thisTerm), TermName("rows"))),
+      ValDef(Modifiers(), iteratorTerm, TypeTree(), Select(Ident(rowsTerm), TermName("iterator"))),
+      ValDef(Modifiers(), objResultTerm, TypeTree(), mapCall)
+    )
+
+    val block = Block(vals, Ident(objResultTerm))
+    //println(block)
     block
   }
 

@@ -4,7 +4,7 @@ import scala.language.reflectiveCalls
 import scala.reflect.macros.Context
 import language.experimental.macros
 
-object BinderProxy {
+object  BinderProxy {
 
   import scala.reflect.runtime.{universe => ru}
 
@@ -41,5 +41,21 @@ object BinderProxy {
     val c0: c.type = c
     val bundle = new { val c: c0.type = c0 } with BinderImplementation
     c.Expr[O](bundle.unbindPartial[R,O](obj.tree))
+  }
+
+  def unbindOne[RS: c.WeakTypeTag, O: c.WeakTypeTag]
+  (c: Context) : c.Expr[O] = {
+
+    val c0: c.type = c
+    val bundle = new { val c: c0.type = c0 } with BinderImplementation
+    c.Expr[O](bundle.unbindOne[RS,O])
+  }
+
+  def unbindAll[RS: c.WeakTypeTag, O: c.WeakTypeTag]
+  (c: Context) : c.Expr[O] = {
+
+    val c0: c.type = c
+    val bundle = new { val c: c0.type = c0 } with BinderImplementation
+    c.Expr[O](bundle.unbindAll[RS,O])
   }
 }

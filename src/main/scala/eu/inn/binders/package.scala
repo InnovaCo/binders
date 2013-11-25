@@ -15,6 +15,12 @@ package object binders {
   }
 
   implicit class RowsUnbindOps[RS <: Rows[_]](val rows: RS) {
-    def unbindOne[O] : Option[O] = None
+    def unbindOne[O] : Option[O] = macro BinderProxy.unbindOne[RS,O]
+    def unbindAll[O] : Iterator[O] = macro BinderProxy.unbindAll[RS,O]
+  }
+
+  implicit class QueryOps[Q <: Query[_,_]](val query: Q) {
+
+    //def execute[T0](t0: T0) : query.rowsType = macro BinderProxy.execute[RS,O]
   }
 }
