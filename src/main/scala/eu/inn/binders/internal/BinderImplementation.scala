@@ -17,15 +17,16 @@ private trait BinderImplementation {
     val stmtTerm = newTermName(c.fresh("$stmt"))
     val indexTerm = newTermName(c.fresh("$index"))
     val objTerm = newTermName(c.fresh("$obj"))
+
+
     val vals = List(
       ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
       ValDef(Modifiers(), stmtTerm, TypeTree(), Select(Ident(thisTerm), TermName("stmt"))),
       ValDef(Modifiers(), indexTerm, TypeTree(), index),
-      ValDef(Modifiers(), objTerm, TypeTree(), obj)
+      ValDef(Modifiers(), objTerm, TypeTree(weakTypeTag[O].tpe), obj)
     )
 
-    // println(wholeParamType)
-    val wholeParamSetter = findSetter(true, setters, obj.symbol)
+    val wholeParamSetter = findSetter(true, setters, obj.symbol, weakTypeTag[O].tpe)
 
     // println (wholeParamSetter)
     val listOfCalls : List[Tree] = wholeParamSetter match {
@@ -38,10 +39,10 @@ private trait BinderImplementation {
         val caseClassParams = extractCaseClassParams[O]
 
         caseClassParams.flatMap { parameter =>
-            // println("looking setter for " + parameter + " in " + setters)
-            findSetter(false, setters, parameter).map { setter =>
+            // println("looking setter for " + parSym + " in " + setters)
+            findSetter(false, setters, parameter, parameter.typeSignature).map { setter =>
 
-              // println("found setter for " + parameter + " : " + setter)
+              // println("found setter for " + parSym + " : " + setter)
               val setterCall = Apply(Select(Ident(stmtTerm),TermName(setter.name.decoded)),
                 List(Literal(Constant(parameter.name.decoded)),
                   Select(Ident(objTerm.decoded),TermName(parameter.name.decoded)))
@@ -59,7 +60,7 @@ private trait BinderImplementation {
     }
 
     val block = Block(vals ++ listOfCalls, Literal(Constant()))
-    //println(block)
+    // println(block)
     block
   }
 
@@ -200,7 +201,7 @@ private trait BinderImplementation {
     )
 
     val block = Block(vals, Ident(objResultTerm))
-    //println(block)
+    // println(block)
     block
   }
 
@@ -235,31 +236,34 @@ private trait BinderImplementation {
     )
 
     val block = Block(vals, Ident(rowsTerm))
-    println(block)
+    // println(block)
     block
   }
 
 
 
-  private def findSetter(byIndex: Boolean, setters: List[MethodSymbol], parameter: c.Symbol) : Option[MethodSymbol] = {
+  private def findSetter(byIndex: Boolean, setters: List[MethodSymbol], parSym: Symbol, parSymType: Type) : Option[MethodSymbol] = {
 
     var exactMatch: Option[MethodSymbol] = None
     var baseMatch: Option[MethodSymbol] = None
     for (m <- setters) {
 
-      val idxSymbol = m.paramss.head(0); // parameter 1 (index/name)
-      val valueSymbol = m.paramss.head(1); // parameter 2 (value)
-
-      //println("Comparing " + m + " with type " + valueSymbol.typeSignature + " for parameter " + parameter + " with type " + parameter.typeSignature)
+      val idxSymbol = m.paramss.head(0); // parSym 1 (index/name)
+      val methodParSym = m.paramss.head(1); // parSym 2 (value)
 
       if (if (byIndex) idxSymbol.typeSignature =:= typeOf[Int] else idxSymbol.typeSignature =:= typeOf[String]) {
-        if (parameter.typeSignature =:= valueSymbol.typeSignature) {
+        if (parSymType =:= methodParSym.typeSignature) {
           exactMatch = Some(m)
+          //println("Comparing " + m + " with arg type " + methodParSym.typeSignature + " for parameter " + parSym + " with type " + parSymType + " EXACT MATCH " + math.random)
         }
         else
-        if (parameter.typeSignature <:< valueSymbol.typeSignature) {
+        if (parSymType <:< methodParSym.typeSignature) {
           baseMatch = Some(m)
+          //println("Comparing " + m + " with arg type " + methodParSym.typeSignature + " for parameter " + parSym + " with type " + parSymType + " BASE MATCH " + math.random)
         }
+        /*else
+          println("Comparing " + m + " with arg type " + methodParSym.typeSignature + " for parameter " + parSym + " with type " + parSymType + " NO MATCH " + math.random)
+          */
       }
     }
 
@@ -314,7 +318,7 @@ private trait BinderImplementation {
       member.isPublic && {
         val m = member.asInstanceOf[MethodSymbol]
         m.paramss.tail.isEmpty && // 1 group of parameters
-        m.paramss.head.size == 1 && // only 1 parameter
+        m.paramss.head.size == 1 && // only 1 parSym
         m.paramss.head(0).typeSignature =:= typeOf[String]
       }
     ).map(_.asInstanceOf[MethodSymbol]).toList
@@ -327,7 +331,7 @@ private trait BinderImplementation {
     val companionType = companionSymbol.typeSignature
 
     companionType.declaration(stringToTermName("unapply")) match {
-      case NoSymbol => c.abort(c.enclosingPosition, s"No unapply function found for ${companioned.fullName}")
+      case NoSymbol => c.abort(c.enclosingPosition, s"No setter or unapply function found for ${companioned.fullName}")
       case s =>
         val unapply = s.asMethod
         val unapplyReturnTypes = unapply.returnType match {
@@ -358,7 +362,7 @@ private trait BinderImplementation {
             apply match {
               case Some(apply) =>
 
-                //println("apply found:" + apply)
+                // println("apply found:" + apply)
                 if (!apply.paramss.tail.isEmpty)
                   c.abort(c.enclosingPosition, "Couldn't use apply method with more than a single parameter group")
 

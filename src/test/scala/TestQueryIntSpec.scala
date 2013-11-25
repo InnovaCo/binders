@@ -3,7 +3,7 @@ import org.scalatest.{FlatSpec,Matchers}
 import org.mockito.Mockito._
 import eu.inn.binders._
 
-class TestQuerySpec extends FlatSpec with Matchers {
+class TestQueryIntSpec extends FlatSpec with Matchers {
 
   "TestQuery " should " should bind parameters by index" in {
     val m =  mock[TestStatement]

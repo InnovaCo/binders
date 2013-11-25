@@ -1,4 +1,4 @@
-package eu.inn.binders
+package eu.inn.binders.core
 
 trait Statement {
   def hasParameter(parameterName: String) : Boolean

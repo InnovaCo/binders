@@ -3,9 +3,7 @@ import org.scalatest.{FlatSpec,Matchers}
 import org.mockito.Mockito._
 import eu.inn.binders._
 
-class TestBindSpec extends FlatSpec with Matchers {
-
-  case class TestInt(intValue1: Int, nullableValue: Option[Int], intValue2: Int)
+class TestBindIntSpec extends FlatSpec with Matchers {
 
   "all case class with int " should "  be bound to statement by names " in {
     val m = mock[TestStatement]

@@ -1,4 +1,4 @@
-package eu.inn.binders
+package eu.inn.binders.core
 
 import scala.reflect.runtime.universe._
 

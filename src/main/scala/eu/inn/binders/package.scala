@@ -1,5 +1,7 @@
 package eu.inn
 
+import eu.inn.binders.core.{Statement, Rows, Row, Query}
+
 package object binders {
   import eu.inn.internal.BinderProxy
   import language.experimental.macros

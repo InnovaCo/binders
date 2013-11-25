@@ -1,23 +1,26 @@
-import eu.inn.binders.Query
+import eu.inn.binders.core.{Statement, Rows, Row, Query}
+import java.util.Date
 
-trait TestRow extends eu.inn.binders.Row {
+trait TestRow extends Row {
   def getInt(name: String) : Int
   def getIntNullable(name: String) : Option[Int]
+  def getDate(name: String) : Date
+  def getDateNullable(name: String) : Option[Date]
 }
 
-trait TestRows extends eu.inn.binders.Rows[TestRow] {
+trait TestRows extends Rows[TestRow] {
 
 }
 
-trait TestStatement extends eu.inn.binders.Statement {
-  /*def setLong(index: Int, value: Long)
-  def setLongNullable(index: Int, value: Option[Long])
-  def setLong(name: String, value: Long)
-  def setLongNullable(name: String, value: Option[Long])*/
+trait TestStatement extends Statement {
   def setInt(index: Int, value: Int)
   def setIntNullable(index: Int, value: Option[Int])
   def setInt(name: String, value: Int)
   def setIntNullable(name: String, value: Option[Int])
+  def setDate(index: Int, value: Date)
+  def setDateNullable(index: Int, value: Option[Date])
+  def setDate(name: String, value: Date)
+  def setDateNullable(name: String, value: Option[Date])
 }
 
 class TestQuery(statement : TestStatement) extends Query[TestRows, TestStatement]{
@@ -30,3 +33,4 @@ class TestQuery(statement : TestStatement) extends Query[TestRows, TestStatement
 }
 
 case class TestInt(intValue1: Int, nullableValue: Option[Int], intValue2: Int)
+case class TestDate(dateValue1: Date, nullableValue: Option[Date], dateValue2: Date)
