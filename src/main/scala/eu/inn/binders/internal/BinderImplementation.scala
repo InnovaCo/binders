@@ -204,7 +204,44 @@ private trait BinderImplementation {
     block
   }
 
-  def findSetter(byIndex: Boolean, setters: List[MethodSymbol], parameter: c.Symbol) : Option[MethodSymbol] = {
+  def execute (args: Seq[c.Tree]): c.Tree = {
+
+    val thisTerm = TermName(c.fresh("$this"))
+    val rowsTerm = TermName(c.fresh("$rows"))
+    val stmtTerm = TermName(c.fresh("$stmt"))
+
+    var bindAllParameters =
+      args.zipWithIndex.map { arg =>
+        val t = arg._1
+        val index = arg._2
+        val term = TermName(c.fresh("$t0"))
+        val vdef = ValDef(Modifiers(), term, TypeTree(), t)
+        val bindCall = Apply(Select(Ident(stmtTerm), "bind"), List(Literal(Constant(index)),Ident(term)))
+        List(vdef,bindCall)
+      } flatten
+
+    val bindCallback = Function(
+      List(ValDef(Modifiers(Flag.PARAM), stmtTerm, Select(Ident(thisTerm), TypeName("statementType")), EmptyTree)),
+      Block(bindAllParameters.toList, Literal(Constant()))
+    )
+
+    val callExecute = Apply(
+      Select(Select(Ident(thisTerm), "query"), "bindAndExecute"), List(bindCallback)
+    )
+
+    val vals = List(
+      ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
+      ValDef(Modifiers(), rowsTerm, TypeTree(), callExecute)
+    )
+
+    val block = Block(vals, Ident(rowsTerm))
+    println(block)
+    block
+  }
+
+
+
+  private def findSetter(byIndex: Boolean, setters: List[MethodSymbol], parameter: c.Symbol) : Option[MethodSymbol] = {
 
     var exactMatch: Option[MethodSymbol] = None
     var baseMatch: Option[MethodSymbol] = None
@@ -232,7 +269,7 @@ private trait BinderImplementation {
       baseMatch
   }
   
-  def extractSetters[T: c.WeakTypeTag] : List[MethodSymbol] = {
+  private def extractSetters[T: c.WeakTypeTag] : List[MethodSymbol] = {
 
     weakTypeOf[T].members.filter(member => member.isMethod &&
       member.name.decoded.startsWith("set") &&
@@ -246,7 +283,7 @@ private trait BinderImplementation {
     ).map(_.asInstanceOf[MethodSymbol]).toList
   }
 
-  def findGetter(getters: List[MethodSymbol], parameter: c.Symbol) : MethodSymbol = {
+  private def findGetter(getters: List[MethodSymbol], parameter: c.Symbol) : MethodSymbol = {
 
     var exactMatch: Option[MethodSymbol] = None
     var baseMatch: Option[MethodSymbol] = None
@@ -269,8 +306,8 @@ private trait BinderImplementation {
     else
       c.abort(c.enclosingPosition, "No getter function found for parameter " + parameter)
   }
-  
-  def extractGetters[T: c.WeakTypeTag] : List[MethodSymbol] = {
+
+  private def extractGetters[T: c.WeakTypeTag] : List[MethodSymbol] = {
 
     weakTypeOf[T].members.filter(member => member.isMethod &&
       member.name.decoded.startsWith("get") &&
@@ -283,7 +320,7 @@ private trait BinderImplementation {
     ).map(_.asInstanceOf[MethodSymbol]).toList
   }
 
-  def extractCaseClassParams[T: c.WeakTypeTag] : List[c.Symbol] = {
+  private def extractCaseClassParams[T: c.WeakTypeTag] : List[c.Symbol] = {
 
     val companioned = weakTypeOf[T].typeSymbol
     val companionSymbol = companioned.companionSymbol
@@ -334,12 +371,12 @@ private trait BinderImplementation {
     }
   }
 
-  object TermName {
+  private object TermName {
     def apply(s: String) = newTermName(s)
     def unapply(name: TermName): Option[String] = Some(name.toString)
   }
 
-  object TypeName {
+  private object TypeName {
     def apply(s: String) = newTypeName(s)
     def unapply(name: TypeName): Option[String] = Some(name.toString)
   }

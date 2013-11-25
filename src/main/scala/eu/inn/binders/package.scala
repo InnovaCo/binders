@@ -20,7 +20,8 @@ package object binders {
   }
 
   implicit class QueryOps[Q <: Query[_,_]](val query: Q) {
-
-    //def execute[T0](t0: T0) : query.rowsType = macro BinderProxy.execute[RS,O]
+    type rowsType = query.rowsType
+    type statementType = query.statementType
+    def execute(t: Any*) : query.rowsType = macro BinderProxy.execute[rowsType]
   }
 }

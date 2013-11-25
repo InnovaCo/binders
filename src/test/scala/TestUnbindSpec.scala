@@ -3,18 +3,10 @@ import org.scalatest.{FlatSpec,Matchers}
 import org.mockito.Mockito._
 import eu.inn.binders._
 
-class TestUnbind extends FlatSpec with Matchers {
+class TestUnbindSpec extends FlatSpec with Matchers {
 
   case class TestInt(intValue1: Int, nullableValue: Option[Int], intValue2: Int)
 
-  trait TestRow extends eu.inn.binders.Row {
-    def getInt(name: String) : Int
-    def getIntNullable(name: String) : Option[Int]
-  }
-
-  trait TestRows extends eu.inn.binders.Rows[TestRow] {
-
-  }
 
   "case class with int " should " be created from row by field names" in {
     val m = mock[TestRow]

@@ -58,4 +58,20 @@ object  BinderProxy {
     val bundle = new { val c: c0.type = c0 } with BinderImplementation
     c.Expr[O](bundle.unbindAll[RS,O])
   }
+
+  def execute[RS: c.WeakTypeTag] (c: Context)
+  (t: c.Expr[Any]*): c.Expr[RS] = {
+
+    val c0: c.type = c
+    val bundle = new { val c: c0.type = c0 } with BinderImplementation
+    c.Expr[RS](bundle.execute(t.map(_.tree)))
+  }
+
+  /*def execute[Q: c.WeakTypeTag, RS: c.WeakTypeTag, T0: c.WeakTypeTag] (c: Context)
+                                                                      (t0: c.Expr[T0], t1: c.Expr[T0]): c.Expr[RS] = {
+
+    val c0: c.type = c
+    val bundle = new { val c: c0.type = c0 } with BinderImplementation
+    c.Expr[RS](bundle.execute(t0.tree, t1.tree))
+  }*/
 }

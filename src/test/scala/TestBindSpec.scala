@@ -3,22 +3,9 @@ import org.scalatest.{FlatSpec,Matchers}
 import org.mockito.Mockito._
 import eu.inn.binders._
 
-class TestBind extends FlatSpec with Matchers {
+class TestBindSpec extends FlatSpec with Matchers {
 
   case class TestInt(intValue1: Int, nullableValue: Option[Int], intValue2: Int)
-
-  trait TestStatement extends eu.inn.binders.Statement {
-    def setLong(index: Int, value: Long)
-    def setLongNullable(index: Int, value: Option[Long])
-    def setLong(name: String, value: Long)
-    def setLongNullable(name: String, value: Option[Long])
-    def setInt(index: Int, value: Int)
-    def setIntNullable(index: Int, value: Option[Int])
-    def setInt(name: String, value: Int)
-    def setIntNullable(name: String, value: Option[Int])
-  }
-  
-  
 
   "all case class with int " should "  be bound to statement by names " in {
     val m = mock[TestStatement]
