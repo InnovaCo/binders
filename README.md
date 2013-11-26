@@ -4,11 +4,11 @@
 
 binders is too far from the being ORM. It's just a helper for binding to and from db specific object such as Statement, ResultSet and Row with the support of Scala Macros.
 
-binders consist from **binders-core** and database specific libraries. Currently **binders-cassandra** is awailable and you can [find it here](/InnovaCo/binders-cassanrda)
+binders consist from **binders-core** and database specific libraries. Currently **binders-cassandra** is awailable and you can [find it here](https://github.com/InnovaCo/binders-cassandra)
 
 ## Usage sample
 
-Sample is based on [binders-cassandra](/InnovaCo/binders-cassanrda)
+Sample is based on [binders-cassandra](https://github.com/InnovaCo/binders-cassandra)
 
 Here is the sample of Scala class that is initialized with Cassandra session and allows you to do select/insert of some user data.
 
@@ -62,3 +62,7 @@ binders-core library currently tested and works only with:
 * Scala 2.10
 * scala-reflect (macros, reflection)
 * sbt 0.13
+
+## License
+
+Product licensed under BSD 3-clause as stated in file LICENSE
