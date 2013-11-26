@@ -4,7 +4,7 @@ import org.mockito.Mockito._
 import eu.inn.binders._
 
 class TestQueryIntSpec extends FlatSpec with Matchers {
-  /*
+
   "TestQuery " should " should bind parameters by index" in {
     val m =  mock[TestStatement]
     val q = new TestQuery(m)
@@ -23,5 +23,4 @@ class TestQueryIntSpec extends FlatSpec with Matchers {
     verify(m).setIntNullable("nullableValue",Some(555))
     verify(m).setInt("intValue2",20)
   }
-  */
 }

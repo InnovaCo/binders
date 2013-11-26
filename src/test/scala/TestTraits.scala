@@ -3,10 +3,10 @@ import java.util.Date
 import scala.reflect._
 
 trait TestRow extends Row {
-  /*def getInt(name: String) : Int
+  def getInt(name: String) : Int
   def getIntNullable(name: String) : Option[Int]
   def getDate(name: String) : Date
-  def getDateNullable(name: String) : Option[Date]*/
+  def getDateNullable(name: String) : Option[Date]
 
   /*def getList[T: ClassTag](name: String) : List[T]
   def getSet[T: ClassTag](name: String) : Set[T]
@@ -30,11 +30,11 @@ trait TestStatement extends Statement {
   def setDateNullable(index: Int, value: Option[Date])
   def setDate(name: String, value: Date)
   def setDateNullable(name: String, value: Option[Date])
-  /*def setList[T](index: Int, value: List[T])
+  def setList[T](index: Int, value: List[T])
   def setList[T](name: String, value: List[T])
   def setSet[T](index: Int, value: Set[T])
   def setSet[T](name: String, value: Set[T])
-  def setMap[K,V](name: String, value: Map[K,V])*/
+  def setMap[K,V](name: String, value: Map[K,V])
 }
 
 class TestQuery(statement : TestStatement) extends Query[TestRows, TestStatement]{
@@ -47,5 +47,5 @@ class TestQuery(statement : TestStatement) extends Query[TestRows, TestStatement
 }
 
 case class TestInt(intValue1: Int, nullableValue: Option[Int], intValue2: Int)
-//case class TestDate(dateValue1: Date, nullableValue: Option[Date], dateValue2: Date)
-//case class TestCollections(intLst: List[Int], strSet: Set[String], longStrMap: Map[Long,String])
+case class TestDate(dateValue1: Date, nullableValue: Option[Date], dateValue2: Date)
+case class TestCollections(intLst: List[Int], strSet: Set[String], longStrMap: Map[Long,String])

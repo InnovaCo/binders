@@ -5,7 +5,6 @@ import org.mockito.Mockito._
 import eu.inn.binders._
 
 class TestBindDateSpec extends FlatSpec with Matchers {
-  /*
   val (yesterday,now) = {
     val cal = Calendar.getInstance()
     cal.setTime(new Date())
@@ -43,5 +42,4 @@ class TestBindDateSpec extends FlatSpec with Matchers {
     verify(m).setDateNullable("nullableValue",Some(yesterday))
     verify(m, times(0)).setDate("dateValue2",now)
   }
-  */
 }

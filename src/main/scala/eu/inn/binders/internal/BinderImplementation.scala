@@ -46,7 +46,7 @@ private trait BinderImplementation {
             // println("found setter for " + parameter + " : " + setter)
             val setterCall = Apply(Select(Ident(stmtTerm),setter),
               List(Literal(Constant(parameter.name.decoded)),
-                Select(Ident(objTerm), parameter))
+                Select(Ident(objTerm), TermName(parameter.name.decoded)))
             )
 
             val hasCall = Apply(Select(Ident(stmtTerm), "hasParameter"), List(Literal(Constant(parameter.name.decoded))))
@@ -65,7 +65,7 @@ private trait BinderImplementation {
     }
 
     val block = Block(vals ++ listOfCalls, Literal(Constant()))
-    println(block)
+    // println(block)
     block
   }
 
@@ -87,7 +87,7 @@ private trait BinderImplementation {
         val getter = findGetter(getters, parameter)
         val apply = makeGetterCall(rowTerm, getter, parameter)
         if (partial) {
-          val fromObjOrig = Select(Ident(objOrigTerm), parameter)
+          val fromObjOrig = Select(Ident(objOrigTerm), TermName(parameter.name.decoded))
           val hasCall = Apply(Select(Ident(rowTerm), "hasField"), List(Literal(Constant(parameter.name.decoded))))
           val iff: Tree = If(hasCall, apply, /*else*/fromObjOrig)
           (TermName(c.fresh("$arg1")), iff, parameter)
@@ -117,11 +117,11 @@ private trait BinderImplementation {
     val applyCallParams: List[Ident] = applyParams.map(a => Ident(a._1))
     val applyCall = Apply(Select(Ident(outputCompanionSymbol.name), "apply"), applyCallParams)
 
-    val block = Block(vals ++ applyVals ++ objOrigVals ++
+    val block = Block(vals ++ objOrigVals ++ applyVals ++
       List(ValDef(Modifiers(), objResultTerm, TypeTree(), applyCall)),
       Ident(objResultTerm))
 
-    println(block)
+    // println(block)
     block
   }
 
