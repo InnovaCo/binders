@@ -18,7 +18,6 @@ private trait BinderImplementation {
     val indexTerm = newTermName(c.fresh("$index"))
     val objTerm = newTermName(c.fresh("$obj"))
 
-
     val vals = List(
       ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
       ValDef(Modifiers(), stmtTerm, TypeTree(), Select(Ident(thisTerm), TermName("stmt"))),
@@ -28,34 +27,39 @@ private trait BinderImplementation {
 
     val wholeParamSetter = findSetter(true, setters, obj.symbol, weakTypeTag[O].tpe)
 
-    // println (wholeParamSetter)
+    // println ("wholeParamSetter = " + wholeParamSetter)
     val listOfCalls : List[Tree] = wholeParamSetter match {
       case Some(m) => {
-        List(Apply(Select(Ident(stmtTerm),TermName(m.name.decoded)),
-          List(Ident(indexTerm.decoded), Ident(objTerm.decoded))))
+        List(Apply(Select(Ident(stmtTerm), m),
+          List(Ident(indexTerm), Ident(objTerm))))
       }
 
       case None => {
         val caseClassParams = extractCaseClassParams[O]
 
         caseClassParams.flatMap { parameter =>
-            // println("looking setter for " + parSym + " in " + setters)
-            findSetter(false, setters, parameter, parameter.typeSignature).map { setter =>
+          // println("looking setter for " + parameter + " in " + setters)
 
-              // println("found setter for " + parSym + " : " + setter)
-              val setterCall = Apply(Select(Ident(stmtTerm),TermName(setter.name.decoded)),
-                List(Literal(Constant(parameter.name.decoded)),
-                  Select(Ident(objTerm.decoded),TermName(parameter.name.decoded)))
-              )
+          val call = findSetter(false, setters, parameter, parameter.typeSignature).map { setter =>
 
-              val hasCall = Apply(Select(Ident(stmtTerm), "hasParameter"), List(Literal(Constant(parameter.name.decoded))))
+            // println("found setter for " + parameter + " : " + setter)
+            val setterCall = Apply(Select(Ident(stmtTerm),setter),
+              List(Literal(Constant(parameter.name.decoded)),
+                Select(Ident(objTerm), parameter))
+            )
 
-              if (allFields)
-                setterCall
-              else
-                If(hasCall, setterCall, Literal(Constant()))
-            }
+            val hasCall = Apply(Select(Ident(stmtTerm), "hasParameter"), List(Literal(Constant(parameter.name.decoded))))
+
+            if (allFields)
+              setterCall
+            else
+              If(hasCall, setterCall, Literal(Constant()))
           }
+          if (call.isEmpty) {
+            c.abort(c.enclosingPosition, "No setter function found for parameter " + parameter)
+          }
+          call
+        }
       }
     }
 
@@ -76,24 +80,32 @@ private trait BinderImplementation {
     val rowTerm = TermName(c.fresh("$row"))
     val objTerm = TermName(c.fresh("$obj"))
 
-    val applyParams =
+    val applyParams : List[(TermName, Apply)] =
       caseClassParams.map { parameter =>
         val getter = findGetter(getters, parameter)
-
-        Apply(Select(Ident(rowTerm),TermName(getter.name.decoded)),
-          List(Literal(Constant(parameter.name.decoded))))
+        val apply = makeGetterCall(thisTerm, rowTerm, getter, parameter.name.decoded)
+        (TermName(c.fresh("$arg1")), apply)
       } toList
 
     val outputCompanionSymbol = weakTypeOf[O].typeSymbol.companionSymbol
-    val applyCall = Apply(Select(Ident(outputCompanionSymbol.name), "apply"),applyParams)
 
     val vals = List(
       ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
-      ValDef(Modifiers(), rowTerm, TypeTree(), Select(Ident(thisTerm), TermName("row"))),
-      ValDef(Modifiers(), objTerm, TypeTree(), applyCall)
+      ValDef(Modifiers(), rowTerm, TypeTree(), Select(Ident(thisTerm), TermName("row")))
     )
-    val block = Block(vals, Ident(objTerm))
-    // println(block)
+
+    val applyVals = applyParams.map(p => {
+      ValDef(Modifiers(), p._1, TypeTree(), p._2)
+    })
+
+    val applyCallParams: List[Ident] = applyParams.map(a => Ident(a._1))
+    val applyCall = Apply(Select(Ident(outputCompanionSymbol.name), "apply"), applyCallParams)
+
+    val block = Block(
+      vals ++ applyVals ++ List(ValDef(Modifiers(), objTerm, TypeTree(), applyCall)),
+      Ident(objTerm))
+
+    println(block)
     block
   }
 
@@ -106,20 +118,18 @@ private trait BinderImplementation {
     // println(caseClassParams)
 
     val thisTerm = TermName(c.fresh("$this"))
-    val rowTerm = newTermName(c.fresh("$row"))
-    val objResultTerm = newTermName(c.fresh("$obj"))
-    val objOrigTerm = newTermName(c.fresh("$objOrig"))
+    val rowTerm = TermName(c.fresh("$row"))
+    val objResultTerm = TermName(c.fresh("$obj"))
+    val objOrigTerm = TermName(c.fresh("$objOrig"))
 
     val applyParams =
       caseClassParams.map { parameter =>
         val getter = findGetter(getters, parameter)
 
-      
-        val fromRow = Apply(Select(Ident(rowTerm),TermName(getter.name.decoded)),
-          List(Literal(Constant(parameter.name.decoded))))
+        val fromRow = makeGetterCall(thisTerm, rowTerm, getter, parameter.name.decoded)
         
         val fromObjOrig =
-            Select(Ident(objOrigTerm.decoded),TermName(parameter.name.decoded))
+            Select(Ident(objOrigTerm), parameter)
 
         val hasCall = Apply(Select(Ident(rowTerm), "hasField"), List(Literal(Constant(parameter.name.decoded))))
 
@@ -240,39 +250,97 @@ private trait BinderImplementation {
     block
   }
 
+  private def makeGetterCall(thisTerm: TermName, rowTerm: TermName, getter: MethodSymbol, parameterName: String) : Apply = {
 
+    val inner = Apply(Select(Ident(rowTerm), getter), List(Literal(Constant(parameterName))))
+
+    getter.paramss.tail.foldLeft(inner){(a:Apply, params:List[Symbol]) =>
+      Apply(a,
+        params.map(p =>
+          Select(
+            This(newTypeName("Predef")), // TODO: this currently doesn't work
+            newTermName("implicitly")
+          )
+        )
+      )
+    }
+  }
 
   private def findSetter(byIndex: Boolean, setters: List[MethodSymbol], parSym: Symbol, parSymType: Type) : Option[MethodSymbol] = {
+    var rMax: Int = 0
+    var mRes: Option[MethodSymbol] = None
 
-    var exactMatch: Option[MethodSymbol] = None
-    var baseMatch: Option[MethodSymbol] = None
-    for (m <- setters) {
+    setters.map({ m =>
 
       val idxSymbol = m.paramss.head(0); // parSym 1 (index/name)
       val methodParSym = m.paramss.head(1); // parSym 2 (value)
 
       if (if (byIndex) idxSymbol.typeSignature =:= typeOf[Int] else idxSymbol.typeSignature =:= typeOf[String]) {
-        if (parSymType =:= methodParSym.typeSignature) {
-          exactMatch = Some(m)
-          //println("Comparing " + m + " with arg type " + methodParSym.typeSignature + " for parameter " + parSym + " with type " + parSymType + " EXACT MATCH " + math.random)
+
+        val r = compareTypes(parSymType, methodParSym.typeSignature)
+        // println("Comparing " + m + " with arg type " + methodParSym.typeSignature + " for parameter " + parSym + " with type " + parSymType + " RES = " + r + " --- " + math.random)
+
+        if (r > rMax) {
+          rMax = r
+          mRes = Some(m)
         }
-        else
-        if (parSymType <:< methodParSym.typeSignature) {
-          baseMatch = Some(m)
-          //println("Comparing " + m + " with arg type " + methodParSym.typeSignature + " for parameter " + parSym + " with type " + parSymType + " BASE MATCH " + math.random)
+      }
+    })
+    mRes
+  }
+
+  private def compareTypes(left: Type, right: Type) : Int = {
+    if (left =:= right)
+      100
+    else
+    if (left <:< right)
+      90
+    else
+    if (left weak_<:< right)
+      80
+    else {
+      println("left = " + left + " " + left.getClass + " right = " + right + " " + right.getClass)
+
+      left match {
+        case TypeRef(leftTpe,leftSym,leftArgs) => {
+          right match {
+            case TypeRef(rightTpe,rightSym,rightArgs) => {
+              println("leftSym = " + leftTpe + " " + leftSym + " " + leftArgs + " right = " + rightTpe + " " + rightSym + " " + rightArgs)
+              var r =
+                if (leftSym.typeSignature =:= rightSym.typeSignature) // Outer type is matched fully
+                  50
+                else
+                if (leftSym.typeSignature <:< rightSym.typeSignature) // Outer type inherits
+                  30
+                else
+                if (rightTpe == NoPrefix) // Right symbol is generic type parameter
+                  20
+                else
+                  0
+
+              if (r > 0) { // now check generic type args
+                println("Checking generic type args of : " + left + " " + right)
+                if (leftArgs.size == rightArgs.size) {
+                  for (i <- 0 until leftArgs.size) {
+                    val lefT = leftArgs(i)
+                    val rightT = rightArgs(i)
+                    val tR = compareTypes(lefT, rightT)
+                    if (tR == 0) {
+                      r = 0
+                    }
+                  }
+                }
+              }
+              r
+            }
+            case _ => 0
+          }
         }
-        /*else
-          println("Comparing " + m + " with arg type " + methodParSym.typeSignature + " for parameter " + parSym + " with type " + parSymType + " NO MATCH " + math.random)
-          */
+        case _ => 0
       }
     }
-
-    if (exactMatch.isDefined)
-      exactMatch
-    else
-      baseMatch
   }
-  
+
   private def extractSetters[T: c.WeakTypeTag] : List[MethodSymbol] = {
 
     weakTypeOf[T].members.filter(member => member.isMethod &&
@@ -289,24 +357,23 @@ private trait BinderImplementation {
 
   private def findGetter(getters: List[MethodSymbol], parameter: c.Symbol) : MethodSymbol = {
 
-    var exactMatch: Option[MethodSymbol] = None
-    var baseMatch: Option[MethodSymbol] = None
+    var rMax: Int = 0
+    var mRes: Option[MethodSymbol] = None
 
-    for (m <- getters) {
-      if (parameter.typeSignature =:= m.returnType) {
-        exactMatch = Some(m)
-      }
-      else
-      if (m.returnType <:< parameter.typeSignature) {
-        baseMatch = Some(m)
-      }
-    }
+    getters.map({ m =>
 
-    if (exactMatch.isDefined)
-      exactMatch.get
-    else
-    if (baseMatch.isDefined)
-      baseMatch.get
+      val r = compareTypes(parameter.typeSignature, m.returnType)
+      // println("Comparing " + m + " with arg type " + m.returnType + " for parameter " + parameter + " with type " + parameter.typeSignature + " RES = " + r + " --- " + math.random)
+
+      if (r > rMax) {
+        rMax = r
+        mRes = Some(m)
+      }
+    })
+    mRes
+
+    if (mRes.isDefined)
+      mRes.get
     else
       c.abort(c.enclosingPosition, "No getter function found for parameter " + parameter)
   }
@@ -317,12 +384,15 @@ private trait BinderImplementation {
       member.name.decoded.startsWith("get") &&
       member.isPublic && {
         val m = member.asInstanceOf[MethodSymbol]
-        m.paramss.tail.isEmpty && // 1 group of parameters
+        // println(m.paramss)
+        (m.paramss.tail.isEmpty || allImplicits(m.paramss.tail)) && // 1 group of parameters or 2 group with all implicits
         m.paramss.head.size == 1 && // only 1 parSym
         m.paramss.head(0).typeSignature =:= typeOf[String]
       }
     ).map(_.asInstanceOf[MethodSymbol]).toList
   }
+
+  private def allImplicits(symbols: List[List[Symbol]]): Boolean = symbols.flatten.filter(!_.isImplicit).isEmpty
 
   private def extractCaseClassParams[T: c.WeakTypeTag] : List[c.Symbol] = {
 

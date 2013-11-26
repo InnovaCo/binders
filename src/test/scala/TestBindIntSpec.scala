@@ -5,6 +5,7 @@ import eu.inn.binders._
 
 class TestBindIntSpec extends FlatSpec with Matchers {
 
+  /*
   "all case class with int " should "  be bound to statement by names " in {
     val m = mock[TestStatement]
     m.bind(0, TestInt(123456, Some(555), 7890))
@@ -38,4 +39,5 @@ class TestBindIntSpec extends FlatSpec with Matchers {
     verify(m).setIntNullable("nullableValue",Some(555))
     verify(m, times(0)).setInt("intValue2",7890)
   }
+  */
 }

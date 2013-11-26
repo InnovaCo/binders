@@ -4,8 +4,7 @@ import org.mockito.Mockito._
 import eu.inn.binders._
 
 class TestUnbindIntSpec extends FlatSpec with Matchers {
-
-  "case class with int " should " be created from row by field names" in {
+  /*"case class with int " should " be created from row by field names" in {
     val m = mock[TestRow]
     when(m.getInt("intValue1")).thenReturn(123456)
     when(m.getIntNullable("nullableValue")).thenReturn(Some(555))
@@ -56,5 +55,5 @@ class TestUnbindIntSpec extends FlatSpec with Matchers {
 
     val t = m3.unbindAll[TestInt].toSeq
     assert(t === Seq(TestInt(123456,Some(555), 789), TestInt(654321, None, 987)))
-  }
+  }*/
 }
