@@ -30,8 +30,9 @@ private trait BinderImplementation {
     // println ("wholeParamSetter = " + wholeParamSetter)
     val listOfCalls : List[Tree] = wholeParamSetter match {
       case Some(m) => {
-        List(Apply(Select(Ident(stmtTerm), m),
-          List(Ident(indexTerm), Ident(objTerm))))
+        List(
+          makeSetterGetterCall(stmtTerm, (m,wholeParamTypeArgs), List(Ident(indexTerm), Ident(objTerm)))
+        )
       }
 
       case None => {
@@ -44,10 +45,13 @@ private trait BinderImplementation {
           val call = sttr.map { setter =>
 
             // println("found setter for " + parameter + " : " + setter)
-            val setterCall = Apply(Select(Ident(stmtTerm),setter),
-              List(Literal(Constant(parameter.name.decoded)),
-                Select(Ident(objTerm), TermName(parameter.name.decoded)))
-            )
+            val setterCall =
+              makeSetterGetterCall(stmtTerm, (setter,callTypeArgs),
+                List(
+                  Literal(Constant(parameter.name.decoded)),
+                  Select(Ident(objTerm), TermName(parameter.name.decoded))
+                )
+              )
 
             val hasCall = Apply(Select(Ident(stmtTerm), "hasParameter"), List(Literal(Constant(parameter.name.decoded))))
 
@@ -85,7 +89,7 @@ private trait BinderImplementation {
     val applyParams : List[(TermName, Tree, Symbol)] =
       caseClassParams.map { parameter =>
         val getter = findGetter(getters, parameter)
-        val apply = makeGetterCall(rowTerm, getter, parameter)
+        val apply = makeSetterGetterCall(rowTerm, getter, List(Literal(Constant(parameter.name.decoded))))
         if (partial) {
           val fromObjOrig = Select(Ident(objOrigTerm), TermName(parameter.name.decoded))
           val hasCall = Apply(Select(Ident(rowTerm), "hasField"), List(Literal(Constant(parameter.name.decoded))))
@@ -232,11 +236,8 @@ private trait BinderImplementation {
       TypeApply(select, typeArgs.map(a => Ident(a.typeSymbol)))
   }
 
-  private def makeGetterCall(rowTerm: TermName, getter: (MethodSymbol, List[Type]), parameter: Symbol) : Apply = {
-
-    val typeArgs = extractTypeParameters(parameter.typeSignature)
-    // println("typeArgs1 = " + getter._2)
-    val inner = Apply(applyTypeArgs(Select(Ident(rowTerm), getter._1), getter._2), List(Literal(Constant(parameter.name.decoded))))
+  private def makeSetterGetterCall(rowTerm: TermName, getter: (MethodSymbol, List[Type]), parameters: List[Tree]) : Apply = {
+    val inner = Apply(applyTypeArgs(Select(Ident(rowTerm), getter._1), getter._2), parameters)
 
     getter._1.paramss.tail.foldLeft(inner){(a:Apply, params:List[Symbol]) =>
       Apply(a,
@@ -332,12 +333,12 @@ private trait BinderImplementation {
   }
 
   private def extractSetters[T: c.WeakTypeTag] : List[MethodSymbol] = {
-
     weakTypeOf[T].members.filter(member => member.isMethod &&
       member.name.decoded.startsWith("set") &&
       member.isPublic && {
         val m = member.asInstanceOf[MethodSymbol]
-        m.paramss.tail.isEmpty && // 1 group of parameters
+        m.paramss.nonEmpty &&
+        (m.paramss.tail.isEmpty || allImplicits(m.paramss.tail)) &&
         m.paramss.head.size == 2 && // only 2 parameters
         ( m.paramss.head(0).typeSignature =:= typeOf[Int] ||
           m.paramss.head(0).typeSignature =:= typeOf[String] )
@@ -376,6 +377,7 @@ private trait BinderImplementation {
       member.isPublic && {
         val m = member.asInstanceOf[MethodSymbol]
         // println(m.paramss)
+        m.paramss.nonEmpty &&
         (m.paramss.tail.isEmpty || allImplicits(m.paramss.tail)) && // 1 group of parameters or 2 group with all implicits
         m.paramss.head.size == 1 && // only 1 parSym
         m.paramss.head(0).typeSignature =:= typeOf[String]
