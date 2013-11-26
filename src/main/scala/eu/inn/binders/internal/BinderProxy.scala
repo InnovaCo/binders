@@ -31,7 +31,7 @@ object  BinderProxy {
 
     val c0: c.type = c
     val bundle = new { val c: c0.type = c0 } with BinderImplementation
-    c.Expr[O](bundle.unbind[R,O])
+    c.Expr[O](bundle.unbind[R,O](false, null))
   }
 
   def unbindPartial[R: c.WeakTypeTag, O: c.WeakTypeTag]
@@ -40,7 +40,7 @@ object  BinderProxy {
 
     val c0: c.type = c
     val bundle = new { val c: c0.type = c0 } with BinderImplementation
-    c.Expr[O](bundle.unbindPartial[R,O](obj.tree))
+    c.Expr[O](bundle.unbind[R,O](true, obj.tree))
   }
 
   def unbindOne[RS: c.WeakTypeTag, O: c.WeakTypeTag]

@@ -3,18 +3,25 @@ import org.scalatest.{FlatSpec,Matchers}
 import org.mockito.Mockito._
 import eu.inn.binders._
 
+trait A {
+  def x(t:TestStatement) = {
+    val ti = TestInt(123456, Some(555), 7890)
+    t.bind(0, ti)
+  }
+}
+/*
 class TestBindIntSpec extends FlatSpec with Matchers {
 
-  /*
   "all case class with int " should "  be bound to statement by names " in {
     val m = mock[TestStatement]
     m.bind(0, TestInt(123456, Some(555), 7890))
-    verify(m).setInt("intValue1",123456)
+    /*verify(m).setInt("intValue1",123456)
     verify(m).setIntNullable("nullableValue",Some(555))
     verify(m).setInt("intValue2",7890)
-    verifyNoMoreInteractions(m)
+    verifyNoMoreInteractions(m)*/
   }
 
+  /*
   "all int parameters " should " be bound to statement by indexes " in {
     val m = mock[TestStatement]
     val i1 = 123456
@@ -41,3 +48,4 @@ class TestBindIntSpec extends FlatSpec with Matchers {
   }
   */
 }
+*/

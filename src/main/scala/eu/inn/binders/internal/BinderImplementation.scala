@@ -25,7 +25,7 @@ private trait BinderImplementation {
       ValDef(Modifiers(), objTerm, TypeTree(weakTypeTag[O].tpe), obj)
     )
 
-    val wholeParamSetter = findSetter(true, setters, obj.symbol, weakTypeTag[O].tpe)
+    val (wholeParamSetter,wholeParamTypeArgs) = findSetter(true, setters, obj.symbol, weakTypeTag[O].tpe)
 
     // println ("wholeParamSetter = " + wholeParamSetter)
     val listOfCalls : List[Tree] = wholeParamSetter match {
@@ -40,7 +40,8 @@ private trait BinderImplementation {
         caseClassParams.flatMap { parameter =>
           // println("looking setter for " + parameter + " in " + setters)
 
-          val call = findSetter(false, setters, parameter, parameter.typeSignature).map { setter =>
+          val (sttr, callTypeArgs) = findSetter(false, setters, parameter, parameter.typeSignature)
+          val call = sttr.map { setter =>
 
             // println("found setter for " + parameter + " : " + setter)
             val setterCall = Apply(Select(Ident(stmtTerm),setter),
@@ -64,52 +65,11 @@ private trait BinderImplementation {
     }
 
     val block = Block(vals ++ listOfCalls, Literal(Constant()))
-    // println(block)
-    block
-  }
-
-  def unbind[R: c.WeakTypeTag, O: c.WeakTypeTag] : c.Tree = {
-
-    val getters = extractGetters[R]
-    // println("getters: " + getters)
-
-    val caseClassParams = extractCaseClassParams[O]
-    // println(caseClassParams)
-
-    val thisTerm = TermName(c.fresh("$this"))
-    val rowTerm = TermName(c.fresh("$row"))
-    val objTerm = TermName(c.fresh("$obj"))
-
-    val applyParams : List[(TermName, Apply)] =
-      caseClassParams.map { parameter =>
-        val getter = findGetter(getters, parameter)
-        val apply = makeGetterCall(thisTerm, rowTerm, getter, parameter.name.decoded)
-        (TermName(c.fresh("$arg1")), apply)
-      } toList
-
-    val outputCompanionSymbol = weakTypeOf[O].typeSymbol.companionSymbol
-
-    val vals = List(
-      ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
-      ValDef(Modifiers(), rowTerm, TypeTree(), Select(Ident(thisTerm), TermName("row")))
-    )
-
-    val applyVals = applyParams.map(p => {
-      ValDef(Modifiers(), p._1, TypeTree(), p._2)
-    })
-
-    val applyCallParams: List[Ident] = applyParams.map(a => Ident(a._1))
-    val applyCall = Apply(Select(Ident(outputCompanionSymbol.name), "apply"), applyCallParams)
-
-    val block = Block(
-      vals ++ applyVals ++ List(ValDef(Modifiers(), objTerm, TypeTree(), applyCall)),
-      Ident(objTerm))
-
     println(block)
     block
   }
 
-  def unbindPartial[R: c.WeakTypeTag, O: c.WeakTypeTag] (obj: c.Tree): c.Tree = {
+  def unbind[R: c.WeakTypeTag, O: c.WeakTypeTag](partial: Boolean, obj: c.Tree) : c.Tree = {
 
     val getters = extractGetters[R]
     // println("getters: " + getters)
@@ -122,31 +82,46 @@ private trait BinderImplementation {
     val objResultTerm = TermName(c.fresh("$obj"))
     val objOrigTerm = TermName(c.fresh("$objOrig"))
 
-    val applyParams =
+    val applyParams : List[(TermName, Tree, Symbol)] =
       caseClassParams.map { parameter =>
         val getter = findGetter(getters, parameter)
-
-        val fromRow = makeGetterCall(thisTerm, rowTerm, getter, parameter.name.decoded)
-        
-        val fromObjOrig =
-            Select(Ident(objOrigTerm), parameter)
-
-        val hasCall = Apply(Select(Ident(rowTerm), "hasField"), List(Literal(Constant(parameter.name.decoded))))
-
-        If(hasCall, fromRow, fromObjOrig)
+        val apply = makeGetterCall(rowTerm, getter, parameter)
+        if (partial) {
+          val fromObjOrig = Select(Ident(objOrigTerm), parameter)
+          val hasCall = Apply(Select(Ident(rowTerm), "hasField"), List(Literal(Constant(parameter.name.decoded))))
+          val iff: Tree = If(hasCall, apply, /*else*/fromObjOrig)
+          (TermName(c.fresh("$arg1")), iff, parameter)
+        }
+        else {
+          (TermName(c.fresh("$arg1")), apply, parameter)
+        }
       } toList
 
     val outputCompanionSymbol = weakTypeOf[O].typeSymbol.companionSymbol
-    val applyCall = Apply(Select(Ident(outputCompanionSymbol.name), "apply"),applyParams)
 
     val vals = List(
       ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
-      ValDef(Modifiers(), rowTerm, TypeTree(), Select(Ident(thisTerm), TermName("row"))),
-      ValDef(Modifiers(), objOrigTerm, TypeTree(), obj),
-      ValDef(Modifiers(), objResultTerm, TypeTree(), applyCall)
+      ValDef(Modifiers(), rowTerm, TypeTree(), Select(Ident(thisTerm), TermName("row")))
     )
-    val block = Block(vals, Ident(objResultTerm))
-    // println(block)
+
+    val applyVals = applyParams.map(p => {
+      ValDef(Modifiers(), p._1, TypeTree(p._3.typeSignature), p._2)
+    })
+
+    val objOrigVals = if (partial) {
+      List(ValDef(Modifiers(), objOrigTerm, TypeTree(), obj))
+    }
+    else
+      List()
+
+    val applyCallParams: List[Ident] = applyParams.map(a => Ident(a._1))
+    val applyCall = Apply(Select(Ident(outputCompanionSymbol.name), "apply"), applyCallParams)
+
+    val block = Block(vals ++ applyVals ++ objOrigVals ++
+      List(ValDef(Modifiers(), objResultTerm, TypeTree(), applyCall)),
+      Ident(objResultTerm))
+
+    println(block)
     block
   }
 
@@ -250,15 +225,24 @@ private trait BinderImplementation {
     block
   }
 
-  private def makeGetterCall(thisTerm: TermName, rowTerm: TermName, getter: MethodSymbol, parameterName: String) : Apply = {
+  private def applyTypeArgs(select: Select, typeArgs: List[Type]) = {
+    if (typeArgs.isEmpty)
+      select
+    else
+      TypeApply(select, typeArgs.map(a => Ident(a.typeSymbol)))
+  }
 
-    val inner = Apply(Select(Ident(rowTerm), getter), List(Literal(Constant(parameterName))))
+  private def makeGetterCall(rowTerm: TermName, getter: (MethodSymbol, List[Type]), parameter: Symbol) : Apply = {
 
-    getter.paramss.tail.foldLeft(inner){(a:Apply, params:List[Symbol]) =>
+    val typeArgs = extractTypeParameters(parameter.typeSignature)
+    // println("typeArgs1 = " + getter._2)
+    val inner = Apply(applyTypeArgs(Select(Ident(rowTerm), getter._1), getter._2), List(Literal(Constant(parameter.name.decoded))))
+
+    getter._1.paramss.tail.foldLeft(inner){(a:Apply, params:List[Symbol]) =>
       Apply(a,
         params.map(p =>
           Select(
-            This(newTypeName("Predef")), // TODO: this currently doesn't work
+            Select(Ident(newTermName("scala")), newTermName("Predef")),
             newTermName("implicitly")
           )
         )
@@ -266,10 +250,10 @@ private trait BinderImplementation {
     }
   }
 
-  private def findSetter(byIndex: Boolean, setters: List[MethodSymbol], parSym: Symbol, parSymType: Type) : Option[MethodSymbol] = {
+  private def findSetter(byIndex: Boolean, setters: List[MethodSymbol], parSym: Symbol, parSymType: Type) : (Option[MethodSymbol], List[Type]) = {
     var rMax: Int = 0
     var mRes: Option[MethodSymbol] = None
-
+    var mTypeArgs: List[Type] = List()
     setters.map({ m =>
 
       val idxSymbol = m.paramss.head(0); // parSym 1 (index/name)
@@ -277,35 +261,36 @@ private trait BinderImplementation {
 
       if (if (byIndex) idxSymbol.typeSignature =:= typeOf[Int] else idxSymbol.typeSignature =:= typeOf[String]) {
 
-        val r = compareTypes(parSymType, methodParSym.typeSignature)
+        val (r, typeArgs) = compareTypes(parSymType, methodParSym.typeSignature)
         // println("Comparing " + m + " with arg type " + methodParSym.typeSignature + " for parameter " + parSym + " with type " + parSymType + " RES = " + r + " --- " + math.random)
 
         if (r > rMax) {
           rMax = r
           mRes = Some(m)
+          mTypeArgs = typeArgs
         }
       }
     })
-    mRes
+    (mRes, mTypeArgs)
   }
 
-  private def compareTypes(left: Type, right: Type) : Int = {
+  private def compareTypes(left: Type, right: Type) : (Int, List[Type]) = {
     if (left =:= right)
-      100
+      (100, List())
     else
     if (left <:< right)
-      90
+      (90, List())
     else
     if (left weak_<:< right)
-      80
+      (80, List())
     else {
-      println("left = " + left + " " + left.getClass + " right = " + right + " " + right.getClass)
+      // println("left = " + left + " " + left.getClass + " right = " + right + " " + right.getClass)
 
       left match {
         case TypeRef(leftTpe,leftSym,leftArgs) => {
           right match {
             case TypeRef(rightTpe,rightSym,rightArgs) => {
-              println("leftSym = " + leftTpe + " " + leftSym + " " + leftArgs + " right = " + rightTpe + " " + rightSym + " " + rightArgs)
+              // println("leftSym = " + leftTpe + " " + leftSym + " " + leftArgs + " right = " + rightTpe + " " + rightSym + " " + rightArgs)
               var r =
                 if (leftSym.typeSignature =:= rightSym.typeSignature) // Outer type is matched fully
                   50
@@ -319,7 +304,7 @@ private trait BinderImplementation {
                   0
 
               if (r > 0) { // now check generic type args
-                println("Checking generic type args of : " + left + " " + right)
+                // println("Checking generic type args of : " + left + " " + right)
                 if (leftArgs.size == rightArgs.size) {
                   for (i <- 0 until leftArgs.size) {
                     val lefT = leftArgs(i)
@@ -331,14 +316,19 @@ private trait BinderImplementation {
                   }
                 }
               }
-              r
+              (r, leftArgs)
             }
-            case _ => 0
+            case _ => (0, List())
           }
         }
-        case _ => 0
+        case _ => (0, List())
       }
     }
+  }
+
+  private def extractTypeParameters(t:Type) = t match {
+    case TypeRef(_,_,args) => args
+    case _ => List()
   }
 
   private def extractSetters[T: c.WeakTypeTag] : List[MethodSymbol] = {
@@ -355,25 +345,26 @@ private trait BinderImplementation {
     ).map(_.asInstanceOf[MethodSymbol]).toList
   }
 
-  private def findGetter(getters: List[MethodSymbol], parameter: c.Symbol) : MethodSymbol = {
-
+  private def findGetter(getters: List[MethodSymbol], parameter: c.Symbol) : (MethodSymbol, List[Type]) = {
     var rMax: Int = 0
     var mRes: Option[MethodSymbol] = None
+    var mTypeArgs: List[Type] = List()
 
     getters.map({ m =>
 
-      val r = compareTypes(parameter.typeSignature, m.returnType)
+      val (r, typeArgs) = compareTypes(parameter.typeSignature, m.returnType)
       // println("Comparing " + m + " with arg type " + m.returnType + " for parameter " + parameter + " with type " + parameter.typeSignature + " RES = " + r + " --- " + math.random)
 
       if (r > rMax) {
         rMax = r
         mRes = Some(m)
+        mTypeArgs = typeArgs
       }
     })
     mRes
 
     if (mRes.isDefined)
-      mRes.get
+      (mRes.get, mTypeArgs)
     else
       c.abort(c.enclosingPosition, "No getter function found for parameter " + parameter)
   }
