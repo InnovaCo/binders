@@ -25,5 +25,6 @@ package object binders {
     type rowsType = query.rowsType
     type statementType = query.statementType
     def execute(t: Any*) : query.rowsType = macro BinderProxy.execute[rowsType]
+    def executeWithPartialBind(t: Any*) : query.rowsType = macro BinderProxy.executeWithPartialBind[rowsType]
   }
 }

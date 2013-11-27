@@ -23,4 +23,16 @@ class TestQueryIntSpec extends FlatSpec with Matchers {
     verify(m).setIntNullable("nullableValue",Some(555))
     verify(m).setInt("intValue2",20)
   }
+
+  "TestQuery " should " should bind part of parameters from case class by name" in {
+    val m =  mock[TestStatement]
+    when(m.hasParameter("intValue1")).thenReturn(true)
+    when(m.hasParameter("nullableValue")).thenReturn(true)
+    when(m.hasParameter("intValue2")).thenReturn(false)
+    when(m.setInt("intValue2", 20)).thenThrow(new RuntimeException("intValue2 isn't allowed parameter"))
+    val q = new TestQuery(m)
+    q.executeWithPartialBind(TestInt(10, Some(555), 20))
+    verify(m).setInt("intValue1",10)
+    verify(m).setIntNullable("nullableValue",Some(555))
+  }
 }

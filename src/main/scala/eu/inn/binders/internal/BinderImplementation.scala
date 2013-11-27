@@ -194,7 +194,7 @@ private trait BinderImplementation {
     block
   }
 
-  def execute (args: Seq[c.Tree]): c.Tree = {
+  def execute (args: Seq[c.Tree], partialBind: Boolean): c.Tree = {
 
     val thisTerm = TermName(c.fresh("$this"))
     val rowsTerm = TermName(c.fresh("$rows"))
@@ -206,7 +206,8 @@ private trait BinderImplementation {
         val index = arg._2
         val term = TermName(c.fresh("$t0"))
         val vdef = ValDef(Modifiers(), term, TypeTree(), t)
-        val bindCall = Apply(Select(Ident(stmtTerm), "bind"), List(Literal(Constant(index)),Ident(term)))
+        val bindCallName = if (partialBind) "bindPartial" else "bind"
+        val bindCall = Apply(Select(Ident(stmtTerm), bindCallName), List(Literal(Constant(index)),Ident(term)))
         List(vdef,bindCall)
       } flatten
 
