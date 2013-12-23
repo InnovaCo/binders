@@ -63,6 +63,10 @@ binders-core library currently tested and works only with:
 * scala-reflect (macros, reflection)
 * sbt 0.13
 
+## TODO
+
+* fix problem when Row getter called using type parameters when not found appropriate getter (happens with joda time)
+
 ## License
 
 Product licensed under BSD 3-clause as stated in file LICENSE
