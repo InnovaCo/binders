@@ -1,6 +1,6 @@
 name := "binders-core"
 
-version := "0.0-SNAPSHOT"
+version := "0.1"
 
 organization := "eu.inn"
 
