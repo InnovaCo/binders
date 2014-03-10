@@ -15,6 +15,8 @@ trait TestRow extends Row {
   def getList[T](name: String) : List[T]
   def getSet[T](name: String) : Set[T]
   def getMap[K,V](name: String) : Map[K,V]
+
+  def getGenericMap[K,V](name: String): Option[Map[K,V]]
 }
 
 trait TestRows extends Rows[TestRow] {
@@ -35,6 +37,7 @@ trait TestStatement extends Statement {
   def setSet[T](index: Int, value: Set[T])
   def setSet[T](name: String, value: Set[T])
   def setMap[K,V](name: String, value: Map[K,V])
+  def setGenericMap[K,V](name: String, value: Option[Map[K,V]])
 }
 
 class TestQuery(statement : TestStatement) extends Query[TestRows, TestStatement]{
@@ -49,3 +52,4 @@ class TestQuery(statement : TestStatement) extends Query[TestRows, TestStatement
 case class TestInt(intValue1: Int, nullableValue: Option[Int], intValue2: Int)
 case class TestDate(dateValue1: Date, nullableValue: Option[Date], dateValue2: Date)
 case class TestCollections(intLst: List[Int], strSet: Set[String], longStrMap: Map[Long,String])
+case class TestGenericCollections(genericMap: Option[Map[String, Set[Int]]], genericMapNone: Option[Map[String, Set[Int]]])

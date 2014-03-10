@@ -23,4 +23,20 @@ class TestBindListSpec extends FlatSpec with Matchers {
     val t = m.unbind[TestCollections]
     assert(t === TestCollections(List(123456, 7890), Set("aaa", "bbb"), Map(1l -> "a", 2l -> "b")))
   }
+
+  "Case class with Option[Map[K,V]] " should " be bound to statement by names " in {
+    val m = mock[TestStatement]
+    val tcl = TestGenericCollections(Some(Map("1" -> Set(5,6,7))), None)
+    m.bind(0, tcl)
+    verify(m).setGenericMap("genericMap", Some(Map("1" -> Set(5,6,7))))
+    verify(m).setGenericMap("genericMapNone", None)
+  }
+
+  "Case class with Option[Map[K,V]] " should " be unbound from row" in {
+    val m = mock[TestRow]
+    when(m.getGenericMap[String,Set[Int]]("genericMap")).thenReturn(Some(Map("1" -> Set(5,6,7))))
+    when(m.getGenericMap("genericMapNone")).thenReturn(None)
+    val t = m.unbind[TestGenericCollections]
+    assert(t === TestGenericCollections(Some(Map("1" -> Set(5,6,7))), None))
+  }
 }

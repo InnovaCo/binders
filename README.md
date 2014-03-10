@@ -66,7 +66,6 @@ binders-core library currently tested and works only with:
 ## TODO
 
 * fix problem when Row getter called using type parameters when not found appropriate getter (happens with joda time)
-* support generic setters/getters like Option[Map[String,Set[Int]]] = $row2.getMapNullable[Map]("roles");
 
 ## License
 

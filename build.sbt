@@ -4,13 +4,15 @@ version := "0.1"
 
 organization := "eu.inn"
 
+scalaVersion := "2.10.3"
+
 resolvers ++= Seq("Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/")
 
-libraryDependencies += "org.scalatest" % "scalatest_2.10" % "2.0.RC1" % "test"
+libraryDependencies += "org.scalatest" % "scalatest_2.10" % "2.1.0" % "test"
 
 libraryDependencies += "org.mockito" % "mockito-all" % "1.9.5" % "test"
 
-libraryDependencies += "org.scala-lang" % "scala-reflect" % "2.10.0"
+libraryDependencies += "org.scala-lang" % "scala-reflect" % "2.10.3"
 
 // Sonatype repositary publish options
 publishMavenStyle := true
