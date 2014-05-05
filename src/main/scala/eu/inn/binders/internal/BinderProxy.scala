@@ -6,7 +6,7 @@ import language.experimental.macros
 
 object  BinderProxy {
 
-  import scala.reflect.runtime.{universe => ru}
+  //import scala.reflect.runtime.{universe => ru}
 
   def bind[S: c.WeakTypeTag, O: c.WeakTypeTag]
     (c: Context)

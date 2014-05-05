@@ -41,12 +41,14 @@ trait TestStatement extends Statement {
 }
 
 class TestQuery(statement : TestStatement) extends Query[TestRows, TestStatement]{
-  def bindAndExecute(f : TestStatement => Unit) : TestRows = {
-    f(statement)
-    new Object with TestRows {
-      override def iterator = Iterator.empty
-    }
-  }
+
+	override def executeStatement(statement: TestStatement): TestRows = {
+		new Object with TestRows {
+			override def iterator = Iterator.empty
+		}
+	}
+
+	override def createStatement: TestStatement = statement
 }
 
 case class TestInt(intValue1: Int, nullableValue: Option[Int], intValue2: Int)

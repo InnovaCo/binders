@@ -200,33 +200,39 @@ private trait BinderImplementation {
     val rowsTerm = TermName(c.fresh("$rows"))
     val stmtTerm = TermName(c.fresh("$stmt"))
 
-    var bindAllParameters =
-      args.zipWithIndex.map { arg =>
-        val t = arg._1
-        val index = arg._2
-        val term = TermName(c.fresh("$t0"))
-        val vdef = ValDef(Modifiers(), term, TypeTree(), t)
-        val bindCallName = if (partialBind) "bindPartial" else "bind"
-        val bindCall = Apply(Select(Ident(stmtTerm), bindCallName), List(Literal(Constant(index)),Ident(term)))
-        List(vdef,bindCall)
-      } flatten
+		val bindAllParameters =
+			args.zipWithIndex.map {
+				arg =>
+					val t = arg._1
+					val index = arg._2
+					val term = TermName(c.fresh("$t0"))
+					val vdef = ValDef(Modifiers(), term, TypeTree(), t)
+					val bindCallName = if (partialBind) "bindPartial" else "bind"
+					val bindCall = Apply(Select(Ident(stmtTerm), bindCallName), List(Literal(Constant(index)), Ident(term)))
+					List(vdef, bindCall)
+			}.flatten
 
-    val bindCallback = Function(
-      List(ValDef(Modifiers(Flag.PARAM), stmtTerm, Select(Ident(thisTerm), TypeName("statementType")), EmptyTree)),
-      Block(bindAllParameters.toList, Literal(Constant()))
-    )
+		val callCreateStatement = Apply(
+			Select(Select(Ident(thisTerm), "query"), "createStatement"), List()
+		)
 
     val callExecute = Apply(
-      Select(Select(Ident(thisTerm), "query"), "bindAndExecute"), List(bindCallback)
+      Select(Select(Ident(thisTerm), "query"), "executeStatement"), List(Ident(stmtTerm))
     )
 
-    val vals = List(
+    val vals1 = List(
       ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
-      ValDef(Modifiers(), rowsTerm, TypeTree(), callExecute)
+			ValDef(Modifiers(), stmtTerm, TypeTree(), callCreateStatement)
     )
 
-    val block = Block(vals, Ident(rowsTerm))
-    // println(block)
+		val vals2 = List(
+			ValDef(Modifiers(), rowsTerm, TypeTree(), callExecute)
+		)
+
+    val block = Block(vals1 ++
+			bindAllParameters ++
+			vals2, Ident(rowsTerm))
+    //println(block)
     block
   }
 
