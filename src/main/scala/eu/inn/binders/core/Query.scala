@@ -1,8 +1,10 @@
 package eu.inn.binders.core
 
-trait Query[RS,S] {
+trait Query[RS, S] {
   type rowsType = RS
   type statementType = S
-	def createStatement(): S
-  def executeStatement(statement: S) : RS
+
+  def createStatement(): S
+
+  def executeStatement(statement: S): RS
 }
