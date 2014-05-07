@@ -9,6 +9,7 @@ class SnakeCaseParser extends IdentifierParser {
         builder.divider()
         builder.regular(c)
         underscoreConsumed = true
+        prevIsUnderscore = false
       }
       else {
         if (c == '_') {

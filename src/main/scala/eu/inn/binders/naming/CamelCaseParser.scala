@@ -9,6 +9,9 @@ class CamelCaseParser extends IdentifierParser {
           builder.divider()
           builder.regular(c)
         }
+        else {
+          builder.regular(c)
+        }
         prevIsSmallCaps = false
       }
       else {

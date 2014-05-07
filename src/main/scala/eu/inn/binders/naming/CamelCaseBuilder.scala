@@ -9,7 +9,7 @@ class CamelCaseBuilder(possibleLength: Option[Int] = None) extends IdentifierBui
     new StringBuilder
   }
 
-  private var nextIsUpperCase = false
+  protected var nextIsUpperCase = false
 
   override def divider(): Unit = {
     nextIsUpperCase = true
@@ -19,7 +19,8 @@ class CamelCaseBuilder(possibleLength: Option[Int] = None) extends IdentifierBui
     if (nextIsUpperCase)
       sb.append(c.toUpper)
     else
-      sb.append(c)
+      sb.append(c.toLower)
+    nextIsUpperCase = false
   }
 
   override def toString = {

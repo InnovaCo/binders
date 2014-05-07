@@ -1,7 +1,6 @@
 package eu.inn.binders.naming
 
-
-class SnakeCaseBuilder(possibleLength: Option[Int] = None) extends IdentifierBuilder {
+class SnakeUpperCaseBuilder(possibleLength: Option[Int] = None) extends IdentifierBuilder {
   private val sb = possibleLength.map {
     new StringBuilder(_)
   } getOrElse {
@@ -13,7 +12,7 @@ class SnakeCaseBuilder(possibleLength: Option[Int] = None) extends IdentifierBui
   }
 
   override def regular(c: Char): Unit = {
-    sb.append(c.toLower)
+    sb.append(c.toUpper)
   }
 
   override def toString() = {
