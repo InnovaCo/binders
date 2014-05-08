@@ -1,3 +1,4 @@
+import eu.inn.binders.naming.NoConverter
 import java.util._
 import org.scalatest.mock.MockitoSugar.mock
 import org.scalatest.{FlatSpec,Matchers}
@@ -13,7 +14,7 @@ class TestBindDateSpec extends FlatSpec with Matchers {
   }
 
   "case class with java.util.Date " should "  be bound to statement by names " in {
-    val m = mock[TestStatement]
+    val m = mock[TestStatement[NoConverter]]
     m.bind(0, TestDate(yesterday, Some(yesterday), now))
     verify(m).setDate("dateValue1",yesterday)
     verify(m).setDateNullable("nullableValue",Some(yesterday))
@@ -22,7 +23,7 @@ class TestBindDateSpec extends FlatSpec with Matchers {
   }
 
   "all java.util.Date parameters " should " be bound to statement by indexes " in {
-    val m = mock[TestStatement]
+    val m = mock[TestStatement[NoConverter]]
     m.bind(0, yesterday)
     m.bind(1, Some(yesterday))
     m.bind(2, now)
@@ -33,7 +34,7 @@ class TestBindDateSpec extends FlatSpec with Matchers {
   }
 
   "some case class with java.util.Date " should " be bound to statement by names " in {
-    val m = mock[TestStatement]
+    val m = mock[TestStatement[NoConverter]]
     when(m.hasParameter("dateValue1")).thenReturn(true)
     when(m.hasParameter("nullableValue")).thenReturn(true)
     when(m.hasParameter("dateValue2")).thenReturn(false)

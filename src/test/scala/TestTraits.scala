@@ -1,8 +1,10 @@
 import eu.inn.binders.core.{Statement, Rows, Row, Query}
+import eu.inn.binders.naming.{Converter, CamelCaseToSnakeCaseConverter}
 import java.util.Date
 import scala.reflect._
 
-trait TestRow extends Row {
+trait TestRow[C <: Converter] extends Row {
+  type nameConverterType = C
   def getInt(name: String) : Int
   def getIntNullable(name: String) : Option[Int]
   def getDate(name: String) : Date
@@ -19,11 +21,12 @@ trait TestRow extends Row {
   def getGenericMap[K,V](name: String): Option[Map[K,V]]
 }
 
-trait TestRows extends Rows[TestRow] {
+trait TestRows[C <: Converter] extends Rows[TestRow[C]] {
 
 }
 
-trait TestStatement extends Statement {
+trait TestStatement[C <: Converter] extends Statement {
+  type nameConverterType = C
   def setInt(index: Int, value: Int)
   def setIntNullable(index: Int, value: Option[Int])
   def setInt(name: String, value: Int)
@@ -40,15 +43,15 @@ trait TestStatement extends Statement {
   def setGenericMap[K,V](name: String, value: Option[Map[K,V]])
 }
 
-class TestQuery(statement : TestStatement) extends Query[TestRows, TestStatement]{
+class TestQuery[C <: Converter](statement : TestStatement[C]) extends Query[TestRows[C], TestStatement[C]]{
 
-	override def executeStatement(statement: TestStatement): TestRows = {
-		new Object with TestRows {
+	override def executeStatement(statement: TestStatement[C]): TestRows[C] = {
+		new Object with TestRows[C] {
 			override def iterator = Iterator.empty
 		}
 	}
 
-	override def createStatement: TestStatement = statement
+	override def createStatement: TestStatement[C] = statement
 }
 
 case class TestInt(intValue1: Int, nullableValue: Option[Int], intValue2: Int)

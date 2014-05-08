@@ -3,15 +3,16 @@ package eu.inn.internal
 import scala.language.reflectiveCalls
 import scala.reflect.macros.Context
 import language.experimental.macros
+import eu.inn.binders.naming.Converter
 
 private trait BinderImplementation {
   val c: Context
   import c.universe._
 
   def bind[S: c.WeakTypeTag, O: c.WeakTypeTag] (index: c.Tree, obj: c.Tree, allFields: Boolean): c.Tree = {
-
     val setters = extractSetters[S]
     // println("setters: " + setters)
+    val converter = findConverter[S]
 
     val thisTerm = TermName(c.fresh("$this"))
     val stmtTerm = newTermName(c.fresh("$stmt"))
@@ -48,12 +49,13 @@ private trait BinderImplementation {
             val setterCall =
               makeSetterGetterCall(stmtTerm, setter, callTypeArgs,
                 List(
-                  Literal(Constant(parameter.name.decoded)),
+                  parameterLiteral(parameter, converter),
                   Select(Ident(objTerm), TermName(parameter.name.decoded))
                 )
               )
 
-            val hasCall = Apply(Select(Ident(stmtTerm), "hasParameter"), List(Literal(Constant(parameter.name.decoded))))
+            val hasCall = Apply(Select(Ident(stmtTerm), "hasParameter"),
+              List(parameterLiteral(parameter, converter)))
 
             if (allFields)
               setterCall
@@ -77,6 +79,7 @@ private trait BinderImplementation {
 
     val getters = extractGetters[R]
     // println("getters: " + getters)
+    val converter = findConverter[R]
 
     val caseClassParams = extractCaseClassParams[O]
     // println(caseClassParams)
@@ -87,19 +90,20 @@ private trait BinderImplementation {
     val objOrigTerm = TermName(c.fresh("$objOrig"))
 
     val applyParams : List[(TermName, Tree, Symbol)] =
-      caseClassParams.map { parameter =>
-        val getter = findGetter(getters, parameter)
-        val apply = makeSetterGetterCall(rowTerm, getter._1, getter._2, List(Literal(Constant(parameter.name.decoded))))
-        if (partial) {
-          val fromObjOrig = Select(Ident(objOrigTerm), TermName(parameter.name.decoded))
-          val hasCall = Apply(Select(Ident(rowTerm), TermName("hasField")), List(Literal(Constant(parameter.name.decoded))))
-          val iff: Tree = If(hasCall, apply, /*else*/fromObjOrig)
-          (TermName(c.fresh("$arg1")), iff, parameter)
-        }
-        else {
-          (TermName(c.fresh("$arg1")), apply, parameter)
-        }
-      } toList
+      caseClassParams.map {
+        parameter =>
+          val getter = findGetter(getters, parameter)
+          val apply = makeSetterGetterCall(rowTerm, getter._1, getter._2, List(parameterLiteral(parameter, converter)))
+          if (partial) {
+            val fromObjOrig = Select(Ident(objOrigTerm), TermName(parameter.name.decoded))
+            val hasCall = Apply(Select(Ident(rowTerm), TermName("hasField")), List(parameterLiteral(parameter, converter)))
+            val iff: Tree = If(hasCall, apply, /*else*/ fromObjOrig)
+            (TermName(c.fresh("$arg1")), iff, parameter)
+          }
+          else {
+            (TermName(c.fresh("$arg1")), apply, parameter)
+          }
+      }.toList
 
     val outputCompanionSymbol = weakTypeOf[O].typeSymbol.companionSymbol
 
@@ -349,11 +353,6 @@ private trait BinderImplementation {
     }
   }
 
-  private def extractTypeParameters(t:Type) = t match {
-    case TypeRef(_,_,args) => args
-    case _ => List()
-  }
-
   private def extractSetters[T: c.WeakTypeTag] : List[MethodSymbol] = {
     weakTypeOf[T].members.filter(member => member.isMethod &&
       member.name.decoded.startsWith("set") &&
@@ -456,6 +455,48 @@ private trait BinderImplementation {
             }
         }
 
+    }
+  }
+
+  private def parameterLiteral(symbol: c.Symbol, converter: Option[Converter]): Literal = {
+    Literal(Constant(
+      converter.map {
+        _.convert(symbol.name.decoded)
+      } getOrElse {
+        symbol.name.decoded
+      }
+    ))
+  }
+
+  private def findConverter[T: c.WeakTypeTag]: Option[Converter] = {
+    val tpe = weakTypeTag[T].tpe
+    val converterTypeName = TypeName("nameConverterType")
+
+    val converterTypeOption = tpe.baseClasses.map {
+      baseSymbol =>
+        val baseType = tpe.baseType(baseSymbol)
+        val ct = baseType.declaration(converterTypeName)
+        ct match {
+          case NoSymbol => None
+          case _ =>
+            val t = ct.typeSignatureIn(tpe)
+            if (t weak_<:< weakTypeOf[Converter])
+              Some(t)
+            else
+              None
+        }
+    }.flatten.headOption
+
+    converterTypeOption map { t =>
+      // println(t)
+      val ru = scala.reflect.runtime.universe
+      val clz = Class.forName(t.typeSymbol.fullName)
+      val mirror = ru.runtimeMirror(getClass.getClassLoader)
+      val sym = mirror.classSymbol(clz)
+      val r = mirror.reflectClass(sym)
+      val m = r.symbol.typeSignature.member(ru.nme.CONSTRUCTOR).asMethod
+      val ctr = r.reflectConstructor(m)
+      ctr().asInstanceOf[Converter]
     }
   }
 
