@@ -1,7 +1,7 @@
 package naming
 
-import eu.inn.binders.naming.{CamelCaseBuilder, SnakeCaseParser, CamelCaseParser}
-import org.scalatest.{FlatSpec,Matchers}
+import eu.inn.binders.naming.{CamelCaseBuilder, SnakeCaseParser}
+import org.scalatest.{FlatSpec, Matchers}
 
 class TestCamelCaseBuilder extends FlatSpec with Matchers {
   "CamelCaseBuilder " should " build stringLikeThis" in {

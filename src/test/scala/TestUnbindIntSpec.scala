@@ -1,6 +1,6 @@
 import eu.inn.binders.naming.{CamelCaseToSnakeCaseConverter, PlainConverter}
 import org.scalatest.mock.MockitoSugar.mock
-import org.scalatest.{FlatSpec,Matchers}
+import org.scalatest.{FlatSpec, Matchers}
 import org.mockito.Mockito._
 import eu.inn.binders._
 
@@ -11,7 +11,7 @@ class TestUnbindIntSpec extends FlatSpec with Matchers {
     when(m.getIntNullable("nullableValue")).thenReturn(Some(555))
     when(m.getInt("intValue2")).thenReturn(789)
     val t = m.unbind[TestInt]
-    assert(t === TestInt(123456,Some(555), 789))
+    assert(t === TestInt(123456, Some(555), 789))
   }
 
   "case class with int " should " be created from row by field names using specified naming convention" in {
@@ -20,7 +20,7 @@ class TestUnbindIntSpec extends FlatSpec with Matchers {
     when(m.getIntNullable("nullable_value")).thenReturn(Some(555))
     when(m.getInt("int_value2")).thenReturn(789)
     val t = m.unbind[TestInt]
-    assert(t === TestInt(123456,Some(555), 789))
+    assert(t === TestInt(123456, Some(555), 789))
   }
 
   "case class with int " should " be filled from row by field names and copied" in {
@@ -31,9 +31,9 @@ class TestUnbindIntSpec extends FlatSpec with Matchers {
     when(m.hasField("intValue1")).thenReturn(true)
     when(m.hasField("nullableValue")).thenReturn(true)
     when(m.hasField("intValue2")).thenReturn(false)
-    val t1 = TestInt(0,Some(0),7890)
+    val t1 = TestInt(0, Some(0), 7890)
     val t = m.unbindPartial(t1)
-    assert(t === TestInt(123456,Some(555), 7890))
+    assert(t === TestInt(123456, Some(555), 7890))
   }
 
   "case class with int " should " be created from first row of rows" in {
@@ -46,7 +46,7 @@ class TestUnbindIntSpec extends FlatSpec with Matchers {
     when(m2.iterator).thenReturn(Seq(m).toIterator)
 
     val t = m2.unbindOne[TestInt]
-    assert(t === Some(TestInt(123456,Some(555), 789)))
+    assert(t === Some(TestInt(123456, Some(555), 789)))
   }
 
   "case class with int " should " be created from all of the rows" in {
@@ -61,9 +61,9 @@ class TestUnbindIntSpec extends FlatSpec with Matchers {
     when(m2.getInt("intValue2")).thenReturn(987)
 
     val m3 = mock[TestRows[PlainConverter]]
-    when(m3.iterator).thenReturn(Seq(m1,m2).toIterator)
+    when(m3.iterator).thenReturn(Seq(m1, m2).toIterator)
 
     val t = m3.unbindAll[TestInt].toSeq
-    assert(t === Seq(TestInt(123456,Some(555), 789), TestInt(654321, None, 987)))
+    assert(t === Seq(TestInt(123456, Some(555), 789), TestInt(654321, None, 987)))
   }
 }

@@ -1,7 +1,7 @@
 package naming
 
-import eu.inn.binders.naming.{SnakeUpperCaseBuilder, PascalCaseParser, PascalCaseBuilder}
-import org.scalatest.{FlatSpec,Matchers}
+import eu.inn.binders.naming.{SnakeUpperCaseBuilder, PascalCaseParser}
+import org.scalatest.{FlatSpec, Matchers}
 
 class TestSnakeUpperCaseBuilder extends FlatSpec with Matchers {
   "SnakeCaseBuilder " should " build STRING_LIKE_THIS" in {

@@ -6,5 +6,6 @@ abstract class BaseConverter(val parser: IdentifierParser) extends Converter {
     parser.parse(identifier, b)
     b.toString()
   }
+
   def createBuilder(): IdentifierBuilder
 }

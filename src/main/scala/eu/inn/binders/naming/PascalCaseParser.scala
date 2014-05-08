@@ -1,5 +1,5 @@
 package eu.inn.binders.naming
 
-class PascalCaseParser extends CamelCaseParser{
+class PascalCaseParser extends CamelCaseParser {
 
 }
