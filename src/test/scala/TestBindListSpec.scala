@@ -1,4 +1,4 @@
-import eu.inn.binders.naming.NoConverter
+import eu.inn.binders.naming.PlainConverter
 import org.scalatest.mock.MockitoSugar.mock
 import org.scalatest.{FlatSpec,Matchers}
 import org.mockito.Mockito._
@@ -8,7 +8,7 @@ import scala.reflect.ClassTag
 class TestBindListSpec extends FlatSpec with Matchers {
 
   "Case class with List[T] and Set[T] " should " be bound to statement by names " in {
-    val m = mock[TestStatement[NoConverter]]
+    val m = mock[TestStatement[PlainConverter]]
     val tcl = TestCollections(List(123456, 7890), Set("aaa", "bbb"), Map(1l -> "a", 2l -> "b"))
     m.bind(0, tcl)
     verify(m).setList("intLst", List(123456, 7890))
@@ -17,7 +17,7 @@ class TestBindListSpec extends FlatSpec with Matchers {
   }
 
   "Case class with List[T] and Set[T] " should " be unbound from row" in {
-    val m = mock[TestRow[NoConverter]]
+    val m = mock[TestRow[PlainConverter]]
     when(m.getList[Int]("intLst")).thenReturn(List(123456, 7890))
     when(m.getSet[String]("strSet")).thenReturn(Set("aaa", "bbb"))
     when(m.getMap[Long, String]("longStrMap")).thenReturn(Map(1l -> "a", 2l -> "b"))
@@ -26,7 +26,7 @@ class TestBindListSpec extends FlatSpec with Matchers {
   }
 
   "Case class with Option[Map[K,V]] " should " be bound to statement by names " in {
-    val m = mock[TestStatement[NoConverter]]
+    val m = mock[TestStatement[PlainConverter]]
     val tcl = TestGenericCollections(Some(Map("1" -> Set(5,6,7))), None)
     m.bind(0, tcl)
     verify(m).setGenericMap("genericMap", Some(Map("1" -> Set(5,6,7))))
@@ -34,7 +34,7 @@ class TestBindListSpec extends FlatSpec with Matchers {
   }
 
   "Case class with Option[Map[K,V]] " should " be unbound from row" in {
-    val m = mock[TestRow[NoConverter]]
+    val m = mock[TestRow[PlainConverter]]
     when(m.getGenericMap[String,Set[Int]]("genericMap")).thenReturn(Some(Map("1" -> Set(5,6,7))))
     when(m.getGenericMap("genericMapNone")).thenReturn(None)
     val t = m.unbind[TestGenericCollections]

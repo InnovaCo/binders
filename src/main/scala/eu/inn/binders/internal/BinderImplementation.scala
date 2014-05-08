@@ -479,18 +479,19 @@ private trait BinderImplementation {
         ct match {
           case NoSymbol => None
           case _ =>
-            val t = ct.typeSignatureIn(tpe)
-            if (t weak_<:< weakTypeOf[Converter])
-              Some(t)
-            else
-              None
+            val t = ct.typeSignature.asSeenFrom(tpe, baseSymbol)
+            t.baseClasses.find(_ == typeOf[Converter].typeSymbol).map { x =>
+              t.typeSymbol.asClass
+            } orElse {
+              c.abort(c.enclosingPosition, s"$tpe.nameConverterType: ${t} is not a valid Converter, please use PlainConverter if you don't need convert identifier names")
+            }
         }
     }.flatten.headOption
 
     converterTypeOption map { t =>
-      // println(t)
       val ru = scala.reflect.runtime.universe
-      val clz = Class.forName(t.typeSymbol.fullName)
+      // todo: there should a better way to get runtime-symbol from compile-time
+      val clz = Class.forName(t.fullName)
       val mirror = ru.runtimeMirror(getClass.getClassLoader)
       val sym = mirror.classSymbol(clz)
       val r = mirror.reflectClass(sym)

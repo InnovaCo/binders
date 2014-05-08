@@ -1,4 +1,4 @@
-import eu.inn.binders.naming.{CamelCaseToSnakeCaseConverter, NoConverter}
+import eu.inn.binders.naming.{CamelCaseToSnakeCaseConverter, PlainConverter}
 import org.scalatest.mock.MockitoSugar.mock
 import org.scalatest.{FlatSpec,Matchers}
 import org.mockito.Mockito._
@@ -7,7 +7,7 @@ import eu.inn.binders._
 class TestBindIntSpec extends FlatSpec with Matchers {
 
   "all case class with int " should " be bound to statement by names " in {
-    val m = mock[TestStatement[NoConverter]]
+    val m = mock[TestStatement[PlainConverter]]
     m.bind(0, TestInt(123456, Some(555), 7890))
     verify(m).setInt("intValue1",123456)
     verify(m).setIntNullable("nullableValue",Some(555))
@@ -25,7 +25,7 @@ class TestBindIntSpec extends FlatSpec with Matchers {
   }
 
   "all int parameters " should " be bound to statement by indexes " in {
-    val m = mock[TestStatement[NoConverter]]
+    val m = mock[TestStatement[PlainConverter]]
     val i1 = 123456
     val i2 = Some(555)
     val i3 = 7890
@@ -39,7 +39,7 @@ class TestBindIntSpec extends FlatSpec with Matchers {
   }
 
   "some case class with int " should "  be bound to statement by names " in {
-    val m = mock[TestStatement[NoConverter]]
+    val m = mock[TestStatement[PlainConverter]]
     when(m.hasParameter("intValue1")).thenReturn(true)
     when(m.hasParameter("nullableValue")).thenReturn(true)
     when(m.hasParameter("intValue2")).thenReturn(false)
