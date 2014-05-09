@@ -6,9 +6,8 @@ import language.experimental.macros
 
 object BinderProxy {
 
-  //import scala.reflect.runtime.{universe => ru}
-
-  def bind[S: c.WeakTypeTag, O: c.WeakTypeTag]
+  // todo: return S ?
+  def bindParameter[S: c.WeakTypeTag, O: c.WeakTypeTag]
   (c: Context)
   (index: c.Expr[Int], obj: c.Expr[O]): c.Expr[Unit] = {
 
@@ -16,18 +15,39 @@ object BinderProxy {
     val bundle = new {
       val c: c0.type = c0
     } with BinderImplementation
-    c.Expr[Unit](bundle.bind[S, O](index.tree, obj.tree, true))
+    c.Expr[Unit](bundle.bindParameter[S, O](index.tree, obj.tree))
   }
 
-  def bindPartial[S: c.WeakTypeTag, O: c.WeakTypeTag]
+  def bindClass[S: c.WeakTypeTag, O: c.WeakTypeTag]
   (c: Context)
-  (index: c.Expr[Int], obj: c.Expr[O]): c.Expr[Unit] = {
+  (obj: c.Expr[O]): c.Expr[Unit] = {
 
     val c0: c.type = c
     val bundle = new {
       val c: c0.type = c0
     } with BinderImplementation
-    c.Expr[Unit](bundle.bind[S, O](index.tree, obj.tree, false))
+    c.Expr[Unit](bundle.bindClass[S, O](obj.tree, true))
+  }
+
+  def bindClassPartial[S: c.WeakTypeTag, O: c.WeakTypeTag]
+  (c: Context)
+  (obj: c.Expr[O]): c.Expr[Unit] = {
+
+    val c0: c.type = c
+    val bundle = new {
+      val c: c0.type = c0
+    } with BinderImplementation
+    c.Expr[Unit](bundle.bindClass[S, O](obj.tree, false))
+  }
+
+  def bindArgs(c: Context)
+              (t: c.Expr[Any]*): c.Expr[Unit] = {
+
+    val c0: c.type = c
+    val bundle = new {
+      val c: c0.type = c0
+    } with BinderImplementation
+    c.Expr[Unit](bundle.bindArgs(t.map(_.tree)))
   }
 
   def unbind[R: c.WeakTypeTag, O: c.WeakTypeTag]
@@ -69,25 +89,5 @@ object BinderProxy {
       val c: c0.type = c0
     } with BinderImplementation
     c.Expr[O](bundle.unbindAll[RS, O])
-  }
-
-  def execute[RS: c.WeakTypeTag](c: Context)
-                                (t: c.Expr[Any]*): c.Expr[RS] = {
-
-    val c0: c.type = c
-    val bundle = new {
-      val c: c0.type = c0
-    } with BinderImplementation
-    c.Expr[RS](bundle.execute(t.map(_.tree), false))
-  }
-
-  def executeWithPartialBind[RS: c.WeakTypeTag](c: Context)
-                                               (t: c.Expr[Any]*): c.Expr[RS] = {
-
-    val c0: c.type = c
-    val bundle = new {
-      val c: c0.type = c0
-    } with BinderImplementation
-    c.Expr[RS](bundle.execute(t.map(_.tree), true))
   }
 }

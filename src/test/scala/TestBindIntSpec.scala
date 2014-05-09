@@ -6,18 +6,18 @@ import eu.inn.binders._
 
 class TestBindIntSpec extends FlatSpec with Matchers {
 
-  "all case class with int " should " be bound to statement by names " in {
+  "all case class fields with int " should " be bound to statement by names " in {
     val m = mock[TestStatement[PlainConverter]]
-    m.bind(0, TestInt(123456, Some(555), 7890))
+    m.bindClass(TestInt(123456, Some(555), 7890))
     verify(m).setInt("intValue1", 123456)
     verify(m).setIntNullable("nullableValue", Some(555))
     verify(m).setInt("intValue2", 7890)
     verifyNoMoreInteractions(m)
   }
 
-  "all case class with int " should " be bound to statement by names with specified convention" in {
+  "all case class fields with int " should " be bound to statement by names with specified convention" in {
     val m = mock[TestStatement[CamelCaseToSnakeCaseConverter]]
-    m.bind(0, TestInt(123456, Some(555), 7890))
+    m.bindClass(TestInt(123456, Some(555), 7890))
     verify(m).setInt("int_value1", 123456)
     verify(m).setIntNullable("nullable_value", Some(555))
     verify(m).setInt("int_value2", 7890)
@@ -29,21 +29,33 @@ class TestBindIntSpec extends FlatSpec with Matchers {
     val i1 = 123456
     val i2 = Some(555)
     val i3 = 7890
-    m.bind(0, i1)
-    m.bind(1, i2)
-    m.bind(2, i3)
+    m.bindParameter(0, i1)
+    m.bindParameter(1, i2)
+    m.bindParameter(2, i3)
     verify(m).setInt(0, 123456)
     verify(m).setIntNullable(1, Some(555))
     verify(m).setInt(2, 7890)
     verifyNoMoreInteractions(m)
   }
 
-  "some case class with int " should "  be bound to statement by names " in {
+  "all int parameters " should " be bound to statement as args by indexes " in {
+    val m = mock[TestStatement[PlainConverter]]
+    val i1 = 123456
+    val i2 = Some(555)
+    val i3 = 7890
+    m.bindArgs(i1, i2, i3)
+    verify(m).setInt(0, 123456)
+    verify(m).setIntNullable(1, Some(555))
+    verify(m).setInt(2, 7890)
+    verifyNoMoreInteractions(m)
+  }
+
+  "some case class fields with int " should " be bound to statement by names " in {
     val m = mock[TestStatement[PlainConverter]]
     when(m.hasParameter("intValue1")).thenReturn(true)
     when(m.hasParameter("nullableValue")).thenReturn(true)
     when(m.hasParameter("intValue2")).thenReturn(false)
-    m.bindPartial(0, TestInt(123456, Some(555), 7890))
+    m.bindClassPartial(TestInt(123456, Some(555), 7890))
     verify(m).setInt("intValue1", 123456)
     verify(m).setIntNullable("nullableValue", Some(555))
     verify(m, times(0)).setInt("intValue2", 7890)

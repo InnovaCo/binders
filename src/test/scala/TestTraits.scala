@@ -30,7 +30,7 @@ trait TestRows[C <: Converter] extends Rows[TestRow[C]] {
 
 }
 
-trait TestStatement[C <: Converter] extends Statement {
+trait TestStatement[C <: Converter] extends Statement[TestRows[C]] {
   type nameConverterType = C
 
   def setInt(index: Int, value: Int)
@@ -60,16 +60,15 @@ trait TestStatement[C <: Converter] extends Statement {
   def setMap[K, V](name: String, value: Map[K, V])
 
   def setGenericMap[K, V](name: String, value: Option[Map[K, V]])
-}
 
-class TestQuery[C <: Converter](statement: TestStatement[C]) extends Query[TestRows[C], TestStatement[C]] {
-
-  override def executeStatement(statement: TestStatement[C]): TestRows[C] = {
+  override def executeStatement(): TestRows[C] = {
     new Object with TestRows[C] {
       override def iterator = Iterator.empty
     }
   }
+}
 
+class TestQuery[C <: Converter](statement: TestStatement[C]) extends Query[TestStatement[C]] {
   override def createStatement: TestStatement[C] = statement
 }
 

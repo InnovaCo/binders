@@ -1,5 +1,9 @@
 package eu.inn.binders.core
 
-trait Statement {
+trait Statement[RS] {
+  type rowsType = RS
+
   def hasParameter(parameterName: String): Boolean
+
+  def executeStatement: RS
 }

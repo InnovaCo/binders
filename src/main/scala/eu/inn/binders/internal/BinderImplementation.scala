@@ -10,15 +10,15 @@ private trait BinderImplementation {
 
   import c.universe._
 
-  def bind[S: c.WeakTypeTag, O: c.WeakTypeTag](index: c.Tree, obj: c.Tree, allFields: Boolean): c.Tree = {
+  def bindParameter[S: c.WeakTypeTag, O: c.WeakTypeTag](index: c.Tree, obj: c.Tree): c.Tree = {
     val setters = extractSetters[S]
+    val tpe = weakTypeTag[O].tpe
     // println("setters: " + setters)
-    val converter = findConverter[S]
 
     val thisTerm = TermName(c.fresh("$this"))
-    val stmtTerm = newTermName(c.fresh("$stmt"))
-    val indexTerm = newTermName(c.fresh("$index"))
-    val objTerm = newTermName(c.fresh("$obj"))
+    val stmtTerm = TermName(c.fresh("$stmt"))
+    val indexTerm = TermName(c.fresh("$index"))
+    val objTerm = TermName(c.fresh("$obj"))
 
     val vals = List(
       ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
@@ -27,52 +27,101 @@ private trait BinderImplementation {
       ValDef(Modifiers(), objTerm, TypeTree(weakTypeTag[O].tpe), obj)
     )
 
-    val (wholeParamSetter, wholeParamTypeArgs) = findSetter(true, setters, obj.symbol, weakTypeTag[O].tpe)
+    val (wholeParamSetter, wholeParamTypeArgs) = findSetter(true, setters, obj.symbol, tpe)
+
+    if (!wholeParamSetter.isDefined) {
+      c.abort(c.enclosingPosition, s"No setter function found for parameter #$index with type $tpe")
+    }
 
     // println ("wholeParamSetter = " + wholeParamSetter)
-    val listOfCalls: List[Tree] = wholeParamSetter match {
-      case Some(m) => {
-        List(
-          makeSetterGetterCall(stmtTerm, m, wholeParamTypeArgs, List(Ident(indexTerm), Ident(objTerm)))
-        )
+    val listOfCalls: List[Tree] = wholeParamSetter.map { m =>
+      makeSetterGetterCall(stmtTerm, m, wholeParamTypeArgs, List(Ident(indexTerm), Ident(objTerm)))
+    }.toList
+
+    val block = Block(vals ++ listOfCalls, Literal(Constant()))
+    // println(block)
+    block
+  }
+
+  def bindClass[S: c.WeakTypeTag, O: c.WeakTypeTag](obj: c.Tree, partial: Boolean): c.Tree = {
+    val setters = extractSetters[S]
+    // println("setters: " + setters)
+    val converter = findConverter[S]
+
+    val thisTerm = TermName(c.fresh("$this"))
+    val stmtTerm = TermName(c.fresh("$stmt"))
+    val objTerm = TermName(c.fresh("$obj"))
+
+    val vals = List(
+      ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
+      ValDef(Modifiers(), stmtTerm, TypeTree(), Select(Ident(thisTerm), TermName("stmt"))),
+      ValDef(Modifiers(), objTerm, TypeTree(weakTypeTag[O].tpe), obj)
+    )
+
+    val caseClassParams = extractCaseClassParams[O]
+
+    val listOfCalls: List[Tree] = caseClassParams.flatMap { parameter =>
+      // println("looking setter for " + parameter + " in " + setters)
+
+      val (sttr, callTypeArgs) = findSetter(false, setters, parameter, parameter.typeSignature)
+      val call = sttr.map { setter =>
+
+        // println("found setter for " + parameter + " : " + setter)
+        val setterCall =
+          makeSetterGetterCall(stmtTerm, setter, callTypeArgs,
+            List(
+              parameterLiteral(parameter, converter),
+              Select(Ident(objTerm), TermName(parameter.name.decoded))
+            )
+          )
+
+        val hasCall = Apply(Select(Ident(stmtTerm), "hasParameter"),
+          List(parameterLiteral(parameter, converter)))
+
+        if (partial)
+          setterCall
+        else
+          If(hasCall, setterCall, Literal(Constant()))
       }
-
-      case None => {
-        val caseClassParams = extractCaseClassParams[O]
-
-        caseClassParams.flatMap { parameter =>
-          // println("looking setter for " + parameter + " in " + setters)
-
-          val (sttr, callTypeArgs) = findSetter(false, setters, parameter, parameter.typeSignature)
-          val call = sttr.map { setter =>
-
-            // println("found setter for " + parameter + " : " + setter)
-            val setterCall =
-              makeSetterGetterCall(stmtTerm, setter, callTypeArgs,
-                List(
-                  parameterLiteral(parameter, converter),
-                  Select(Ident(objTerm), TermName(parameter.name.decoded))
-                )
-              )
-
-            val hasCall = Apply(Select(Ident(stmtTerm), "hasParameter"),
-              List(parameterLiteral(parameter, converter)))
-
-            if (allFields)
-              setterCall
-            else
-              If(hasCall, setterCall, Literal(Constant()))
-          }
-          if (call.isEmpty) {
-            c.abort(c.enclosingPosition, "No setter function found for parameter " + parameter)
-          }
-          call
-        }
+      if (call.isEmpty) {
+        c.abort(c.enclosingPosition, "No setter function found for parameter " + parameter)
       }
+      call
     }
 
     val block = Block(vals ++ listOfCalls, Literal(Constant()))
     // println(block)
+    block
+  }
+
+  def bindArgs(args: Seq[c.Tree]): c.Tree = {
+    val thisTerm = TermName(c.fresh("$this"))
+    val stmtTerm = TermName(c.fresh("$stmt"))
+
+    val bindAllParameters =
+      args.zipWithIndex.map {
+        arg =>
+          val t = arg._1
+          val index = arg._2
+          val term = TermName(c.fresh("$t0"))
+          val vdef = ValDef(Modifiers(), term, TypeTree(), t)
+          val bindCall = Apply(
+            Select(Ident(stmtTerm), "bindParameter"),
+            List(Literal(Constant(index)),
+              Ident(term))
+          )
+          List(vdef, bindCall)
+      }.flatten
+
+    val block = Block(
+      List(
+        ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
+        ValDef(Modifiers(), stmtTerm, TypeTree(), Select(Ident(thisTerm), TermName("stmt")))
+      ) ++
+        bindAllParameters,
+      Literal(Constant())
+    )
+    //println(block)
     block
   }
 
@@ -133,6 +182,7 @@ private trait BinderImplementation {
     // println(block)
     block
   }
+
 
   def unbindOne[RS: c.WeakTypeTag, O: c.WeakTypeTag]: c.Tree = {
     val thisTerm = TermName(c.fresh("$this"))
@@ -199,48 +249,6 @@ private trait BinderImplementation {
     block
   }
 
-  def execute(args: Seq[c.Tree], partialBind: Boolean): c.Tree = {
-
-    val thisTerm = TermName(c.fresh("$this"))
-    val rowsTerm = TermName(c.fresh("$rows"))
-    val stmtTerm = TermName(c.fresh("$stmt"))
-
-    val bindAllParameters =
-      args.zipWithIndex.map {
-        arg =>
-          val t = arg._1
-          val index = arg._2
-          val term = TermName(c.fresh("$t0"))
-          val vdef = ValDef(Modifiers(), term, TypeTree(), t)
-          val bindCallName = if (partialBind) "bindPartial" else "bind"
-          val bindCall = Apply(Select(Ident(stmtTerm), bindCallName), List(Literal(Constant(index)), Ident(term)))
-          List(vdef, bindCall)
-      }.flatten
-
-    val callCreateStatement = Apply(
-      Select(Select(Ident(thisTerm), "query"), "createStatement"), List()
-    )
-
-    val callExecute = Apply(
-      Select(Select(Ident(thisTerm), "query"), "executeStatement"), List(Ident(stmtTerm))
-    )
-
-    val vals1 = List(
-      ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
-      ValDef(Modifiers(), stmtTerm, TypeTree(), callCreateStatement)
-    )
-
-    val vals2 = List(
-      ValDef(Modifiers(), rowsTerm, TypeTree(), callExecute)
-    )
-
-    val block = Block(vals1 ++
-      bindAllParameters ++
-      vals2, Ident(rowsTerm))
-    //println(block)
-    block
-  }
-
   private def applyTypeArgs(select: Select, srcTypeArgs: Map[Symbol, Type], dstTypeParams: List[Symbol]) = {
     // println("typeArgs == " + srcTypeArgs + " dstTypes == " + dstTypeParams)
     if (srcTypeArgs.isEmpty)
@@ -264,8 +272,8 @@ private trait BinderImplementation {
       Apply(a,
         params.map(p =>
           Select(
-            Select(Ident(newTermName("scala")), newTermName("Predef")),
-            newTermName("implicitly")
+            Select(Ident(TermName("scala")), TermName("Predef")),
+            TermName("implicitly")
           )
         )
       )
@@ -484,7 +492,7 @@ private trait BinderImplementation {
           case NoSymbol => None
           case _ =>
             val t = ct.typeSignature.asSeenFrom(tpe, baseSymbol)
-            t.baseClasses.find(_ == typeOf[Converter].typeSymbol).map { x =>
+            t.baseClasses.find(t.typeSymbol.isClass && _ == typeOf[Converter].typeSymbol).map { x =>
               t.typeSymbol.asClass
             } orElse {
               c.abort(c.enclosingPosition, s"$tpe.nameConverterType: ${t} is not a valid Converter, please use PlainConverter if you don't need convert identifier names")
