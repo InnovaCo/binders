@@ -5,5 +5,5 @@ trait Statement[RS] {
 
   def hasParameter(parameterName: String): Boolean
 
-  def executeStatement(): RS
+  def execute(): RS
 }

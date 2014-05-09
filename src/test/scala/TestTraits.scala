@@ -61,7 +61,7 @@ trait TestStatement[C <: Converter] extends Statement[TestRows[C]] {
 
   def setGenericMap[K, V](name: String, value: Option[Map[K, V]])
 
-  override def executeStatement(): TestRows[C] = {
+  override def execute(): TestRows[C] = {
     new Object with TestRows[C] {
       override def iterator = Iterator.empty
     }
