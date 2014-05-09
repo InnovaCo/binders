@@ -501,15 +501,20 @@ private trait BinderImplementation {
     }.flatten.headOption
 
     converterTypeOption map { t =>
-      val ru = scala.reflect.runtime.universe
-      // todo: there should a better way to get runtime-symbol from compile-time
-      val clz = Class.forName(t.fullName)
-      val mirror = ru.runtimeMirror(getClass.getClassLoader)
-      val sym = mirror.classSymbol(clz)
-      val r = mirror.reflectClass(sym)
-      val m = r.symbol.typeSignature.member(ru.nme.CONSTRUCTOR).asMethod
-      val ctr = r.reflectConstructor(m)
-      ctr().asInstanceOf[Converter]
+      // this is synchronized because of bug in scala
+      // http://stackoverflow.com/questions/7826822/why-this-synchronized-instead-of-just-synchronized-in-scala
+      this.synchronized {
+        val ru = scala.reflect.runtime.universe
+
+        // todo: there should a better way to get runtime-symbol from compile-time
+        val clz = Class.forName(t.fullName)
+        val mirror = ru.runtimeMirror(getClass.getClassLoader)
+        val sym = mirror.classSymbol(clz)
+        val r = mirror.reflectClass(sym)
+        val m = r.symbol.typeSignature.member(ru.nme.CONSTRUCTOR).asMethod
+        val ctr = r.reflectConstructor(m)
+        ctr().asInstanceOf[Converter]
+      }
     }
   }
 }
