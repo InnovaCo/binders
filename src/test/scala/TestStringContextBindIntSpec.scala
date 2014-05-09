@@ -1,7 +1,5 @@
-import eu.inn.binders.naming.{CamelCaseToSnakeCaseConverter, PlainConverter}
-import org.scalatest.mock.MockitoSugar.mock
-import org.scalatest.{FlatSpec, Matchers}
-import org.mockito.Mockito._
+import eu.inn.binders.naming.CamelCaseToSnakeCaseConverter
+import org.scalatest.FlatSpec
 
 /*
 

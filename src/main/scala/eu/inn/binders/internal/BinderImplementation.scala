@@ -15,14 +15,14 @@ private trait BinderImplementation {
     val tpe = weakTypeTag[O].tpe
     // println("setters: " + setters)
 
-    val thisTerm = TermName(c.fresh("$this"))
-    val stmtTerm = TermName(c.fresh("$stmt"))
-    val indexTerm = TermName(c.fresh("$index"))
-    val objTerm = TermName(c.fresh("$obj"))
+    val thisTerm = newTermName(c.fresh("$this"))
+    val stmtTerm = newTermName(c.fresh("$stmt"))
+    val indexTerm = newTermName(c.fresh("$index"))
+    val objTerm = newTermName(c.fresh("$obj"))
 
     val vals = List(
       ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
-      ValDef(Modifiers(), stmtTerm, TypeTree(), Select(Ident(thisTerm), TermName("stmt"))),
+      ValDef(Modifiers(), stmtTerm, TypeTree(), Select(Ident(thisTerm), newTermName("stmt"))),
       ValDef(Modifiers(), indexTerm, TypeTree(), index),
       ValDef(Modifiers(), objTerm, TypeTree(weakTypeTag[O].tpe), obj)
     )
@@ -48,13 +48,13 @@ private trait BinderImplementation {
     // println("setters: " + setters)
     val converter = findConverter[S]
 
-    val thisTerm = TermName(c.fresh("$this"))
-    val stmtTerm = TermName(c.fresh("$stmt"))
-    val objTerm = TermName(c.fresh("$obj"))
+    val thisTerm = newTermName(c.fresh("$this"))
+    val stmtTerm = newTermName(c.fresh("$stmt"))
+    val objTerm = newTermName(c.fresh("$obj"))
 
     val vals = List(
       ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
-      ValDef(Modifiers(), stmtTerm, TypeTree(), Select(Ident(thisTerm), TermName("stmt"))),
+      ValDef(Modifiers(), stmtTerm, TypeTree(), Select(Ident(thisTerm), newTermName("stmt"))),
       ValDef(Modifiers(), objTerm, TypeTree(weakTypeTag[O].tpe), obj)
     )
 
@@ -71,11 +71,11 @@ private trait BinderImplementation {
           makeSetterGetterCall(stmtTerm, setter, callTypeArgs,
             List(
               parameterLiteral(parameter, converter),
-              Select(Ident(objTerm), TermName(parameter.name.decoded))
+              Select(Ident(objTerm), newTermName(parameter.name.decoded))
             )
           )
 
-        val hasCall = Apply(Select(Ident(stmtTerm), "hasParameter"),
+        val hasCall = Apply(Select(Ident(stmtTerm), newTermName("hasParameter")),
           List(parameterLiteral(parameter, converter)))
 
         if (partial)
@@ -95,15 +95,15 @@ private trait BinderImplementation {
   }
 
   def bindArgs(args: Seq[c.Tree]): c.Tree = {
-    val thisTerm = TermName(c.fresh("$this"))
-    val stmtTerm = TermName(c.fresh("$stmt"))
+    val thisTerm = newTermName(c.fresh("$this"))
+    val stmtTerm = newTermName(c.fresh("$stmt"))
 
     val bindAllParameters =
       args.zipWithIndex.map {
         arg =>
           val t = arg._1
           val index = arg._2
-          val term = TermName(c.fresh("$t0"))
+          val term = newTermName(c.fresh("$t0"))
           val vdef = ValDef(Modifiers(), term, TypeTree(), t)
           val bindCall = Apply(
             Select(Ident(stmtTerm), "bindParameter"),
@@ -116,7 +116,7 @@ private trait BinderImplementation {
     val block = Block(
       List(
         ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
-        ValDef(Modifiers(), stmtTerm, TypeTree(), Select(Ident(thisTerm), TermName("stmt")))
+        ValDef(Modifiers(), stmtTerm, TypeTree(), Select(Ident(thisTerm), newTermName("stmt")))
       ) ++
         bindAllParameters,
       Literal(Constant())
@@ -134,10 +134,10 @@ private trait BinderImplementation {
     val caseClassParams = extractCaseClassParams[O]
     // println(caseClassParams)
 
-    val thisTerm = TermName(c.fresh("$this"))
-    val rowTerm = TermName(c.fresh("$row"))
-    val objResultTerm = TermName(c.fresh("$obj"))
-    val objOrigTerm = TermName(c.fresh("$objOrig"))
+    val thisTerm = newTermName(c.fresh("$this"))
+    val rowTerm = newTermName(c.fresh("$row"))
+    val objResultTerm = newTermName(c.fresh("$obj"))
+    val objOrigTerm = newTermName(c.fresh("$objOrig"))
 
     val applyParams: List[(TermName, Tree, Symbol)] =
       caseClassParams.map {
@@ -145,13 +145,13 @@ private trait BinderImplementation {
           val getter = findGetter(getters, parameter)
           val apply = makeSetterGetterCall(rowTerm, getter._1, getter._2, List(parameterLiteral(parameter, converter)))
           if (partial) {
-            val fromObjOrig = Select(Ident(objOrigTerm), TermName(parameter.name.decoded))
-            val hasCall = Apply(Select(Ident(rowTerm), TermName("hasField")), List(parameterLiteral(parameter, converter)))
+            val fromObjOrig = Select(Ident(objOrigTerm), newTermName(parameter.name.decoded))
+            val hasCall = Apply(Select(Ident(rowTerm), newTermName("hasField")), List(parameterLiteral(parameter, converter)))
             val iff: Tree = If(hasCall, apply, /*else*/ fromObjOrig)
-            (TermName(c.fresh("$arg1")), iff, parameter)
+            (newTermName(c.fresh("$arg1")), iff, parameter)
           }
           else {
-            (TermName(c.fresh("$arg1")), apply, parameter)
+            (newTermName(c.fresh("$arg1")), apply, parameter)
           }
       }.toList
 
@@ -159,7 +159,7 @@ private trait BinderImplementation {
 
     val vals = List(
       ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
-      ValDef(Modifiers(), rowTerm, TypeTree(), Select(Ident(thisTerm), TermName("row")))
+      ValDef(Modifiers(), rowTerm, TypeTree(), Select(Ident(thisTerm), newTermName("row")))
     )
 
     val applyVals = applyParams.map(p => {
@@ -185,18 +185,18 @@ private trait BinderImplementation {
 
 
   def unbindOne[RS: c.WeakTypeTag, O: c.WeakTypeTag]: c.Tree = {
-    val thisTerm = TermName(c.fresh("$this"))
-    val rowsTerm = TermName(c.fresh("$rows"))
-    val iteratorTerm = TermName(c.fresh("$iterator"))
-    val objResultTerm = TermName(c.fresh("$result"))
+    val thisTerm = newTermName(c.fresh("$this"))
+    val rowsTerm = newTermName(c.fresh("$rows"))
+    val iteratorTerm = newTermName(c.fresh("$iterator"))
+    val objResultTerm = newTermName(c.fresh("$result"))
 
     val hasCall = Select(Ident(iteratorTerm), "hasNext")
 
     // get first element
-    val nextRowTerm = TermName(c.fresh("$nextRow"))
+    val nextRowTerm = newTermName(c.fresh("$nextRow"))
     val nextRowCall = Apply(Select(Ident(iteratorTerm), "next"), List())
     val valsNextItem = List(
-      ValDef(Modifiers(), nextRowTerm, Select(Ident(rowsTerm), TypeName("rowType")), nextRowCall)
+      ValDef(Modifiers(), nextRowTerm, Select(Ident(rowsTerm), newTypeName("rowType")), nextRowCall)
     )
 
     val unbindCall = Block(valsNextItem,
@@ -212,8 +212,8 @@ private trait BinderImplementation {
 
     val vals = List(
       ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
-      ValDef(Modifiers(), rowsTerm, TypeTree(), Select(Ident(thisTerm), TermName("rows"))),
-      ValDef(Modifiers(), iteratorTerm, TypeTree(), Select(Ident(rowsTerm), TermName("iterator"))),
+      ValDef(Modifiers(), rowsTerm, TypeTree(), Select(Ident(thisTerm), newTermName("rows"))),
+      ValDef(Modifiers(), iteratorTerm, TypeTree(), Select(Ident(rowsTerm), newTermName("iterator"))),
       ValDef(Modifiers(), objResultTerm, TypeTree(), ifCall)
     )
 
@@ -223,14 +223,14 @@ private trait BinderImplementation {
   }
 
   def unbindAll[RS: c.WeakTypeTag, O: c.WeakTypeTag]: c.Tree = {
-    val thisTerm = TermName(c.fresh("$this"))
-    val rowsTerm = TermName(c.fresh("$rows"))
-    val rowTerm = TermName(c.fresh("$row"))
-    val iteratorTerm = TermName(c.fresh("$iterator"))
-    val objResultTerm = TermName(c.fresh("$result"))
+    val thisTerm = newTermName(c.fresh("$this"))
+    val rowsTerm = newTermName(c.fresh("$rows"))
+    val rowTerm = newTermName(c.fresh("$row"))
+    val iteratorTerm = newTermName(c.fresh("$iterator"))
+    val objResultTerm = newTermName(c.fresh("$result"))
 
     val unbindCall = Function(
-      List(ValDef(Modifiers(Flag.PARAM), rowTerm, Select(Ident(rowsTerm), TypeName("rowType")), EmptyTree)),
+      List(ValDef(Modifiers(Flag.PARAM), rowTerm, Select(Ident(rowsTerm), newTypeName("rowType")), EmptyTree)),
       TypeApply(Select(Ident(rowTerm), "unbind"), List(Ident(weakTypeOf[O].typeSymbol)))
     )
 
@@ -239,8 +239,8 @@ private trait BinderImplementation {
 
     val vals = List(
       ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
-      ValDef(Modifiers(), rowsTerm, TypeTree(), Select(Ident(thisTerm), TermName("rows"))),
-      ValDef(Modifiers(), iteratorTerm, TypeTree(), Select(Ident(rowsTerm), TermName("iterator"))),
+      ValDef(Modifiers(), rowsTerm, TypeTree(), Select(Ident(thisTerm), newTermName("rows"))),
+      ValDef(Modifiers(), iteratorTerm, TypeTree(), Select(Ident(rowsTerm), newTermName("iterator"))),
       ValDef(Modifiers(), objResultTerm, TypeTree(), mapCall)
     )
 
@@ -272,8 +272,8 @@ private trait BinderImplementation {
       Apply(a,
         params.map(p =>
           Select(
-            Select(Ident(TermName("scala")), TermName("Predef")),
-            TermName("implicitly")
+            Select(Ident(newTermName("scala")), newTermName("Predef")),
+            newTermName("implicitly")
           )
         )
       )
@@ -425,7 +425,7 @@ private trait BinderImplementation {
     val companionSymbol = companioned.companionSymbol
     val companionType = companionSymbol.typeSignature
 
-    companionType.declaration(stringToTermName("unapply")) match {
+    companionType.declaration(newTermName("unapply")) match {
       case NoSymbol => c.abort(c.enclosingPosition, s"No setter or unapply function found for ${companioned.fullName}")
       case s =>
         val unapply = s.asMethod
@@ -446,7 +446,7 @@ private trait BinderImplementation {
           case _ => None
         }
 
-        companionType.declaration(stringToTermName("apply")) match {
+        companionType.declaration(newTermName("apply")) match {
           case NoSymbol => c.abort(c.enclosingPosition, "No apply function found")
           case s =>
             // searches apply method corresponding to unapply
@@ -482,7 +482,7 @@ private trait BinderImplementation {
 
   private def findConverter[T: c.WeakTypeTag]: Option[Converter] = {
     val tpe = weakTypeTag[T].tpe
-    val converterTypeName = TypeName("nameConverterType")
+    val converterTypeName = newTypeName("nameConverterType")
 
     val converterTypeOption = tpe.baseClasses.map {
       baseSymbol =>
@@ -512,17 +512,4 @@ private trait BinderImplementation {
       ctr().asInstanceOf[Converter]
     }
   }
-
-  private object TermName {
-    def apply(s: String) = newTermName(s)
-
-    def unapply(name: TermName): Option[String] = Some(name.toString)
-  }
-
-  private object TypeName {
-    def apply(s: String) = newTypeName(s)
-
-    def unapply(name: TypeName): Option[String] = Some(name.toString)
-  }
-
 }
