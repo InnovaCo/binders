@@ -38,7 +38,7 @@ private trait BinderImplementation {
       makeSetterGetterCall(stmtTerm, m, wholeParamTypeArgs, List(Ident(indexTerm), Ident(objTerm)))
     }.toList
 
-    val block = Block(vals ++ listOfCalls, Literal(Constant()))
+    val block = Block(vals ++ listOfCalls, Ident(stmtTerm))
     // println(block)
     block
   }
@@ -89,7 +89,7 @@ private trait BinderImplementation {
       call
     }
 
-    val block = Block(vals ++ listOfCalls, Literal(Constant()))
+    val block = Block(vals ++ listOfCalls, Ident(stmtTerm))
     // println(block)
     block
   }
@@ -119,7 +119,7 @@ private trait BinderImplementation {
         ValDef(Modifiers(), stmtTerm, TypeTree(), Select(Ident(thisTerm), newTermName("stmt")))
       ) ++
         bindAllParameters,
-      Literal(Constant())
+      Ident(stmtTerm)
     )
     //println(block)
     block

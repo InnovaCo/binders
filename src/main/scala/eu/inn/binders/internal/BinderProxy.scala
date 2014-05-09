@@ -9,45 +9,45 @@ object BinderProxy {
   // todo: return S ?
   def bindParameter[S: c.WeakTypeTag, O: c.WeakTypeTag]
   (c: Context)
-  (index: c.Expr[Int], obj: c.Expr[O]): c.Expr[Unit] = {
+  (index: c.Expr[Int], obj: c.Expr[O]): c.Expr[Any] = {
 
     val c0: c.type = c
     val bundle = new {
       val c: c0.type = c0
     } with BinderImplementation
-    c.Expr[Unit](bundle.bindParameter[S, O](index.tree, obj.tree))
+    c.Expr[Any](bundle.bindParameter[S, O](index.tree, obj.tree))
   }
 
   def bindClass[S: c.WeakTypeTag, O: c.WeakTypeTag]
   (c: Context)
-  (obj: c.Expr[O]): c.Expr[Unit] = {
+  (obj: c.Expr[O]): c.Expr[Any] = {
 
     val c0: c.type = c
     val bundle = new {
       val c: c0.type = c0
     } with BinderImplementation
-    c.Expr[Unit](bundle.bindClass[S, O](obj.tree, true))
+    c.Expr[Any](bundle.bindClass[S, O](obj.tree, true))
   }
 
   def bindClassPartial[S: c.WeakTypeTag, O: c.WeakTypeTag]
   (c: Context)
-  (obj: c.Expr[O]): c.Expr[Unit] = {
+  (obj: c.Expr[O]): c.Expr[Any] = {
 
     val c0: c.type = c
     val bundle = new {
       val c: c0.type = c0
     } with BinderImplementation
-    c.Expr[Unit](bundle.bindClass[S, O](obj.tree, false))
+    c.Expr[Any](bundle.bindClass[S, O](obj.tree, false))
   }
 
   def bindArgs(c: Context)
-              (t: c.Expr[Any]*): c.Expr[Unit] = {
+              (t: c.Expr[Any]*): c.Expr[Any] = {
 
     val c0: c.type = c
     val bundle = new {
       val c: c0.type = c0
     } with BinderImplementation
-    c.Expr[Unit](bundle.bindArgs(t.map(_.tree)))
+    c.Expr[Any](bundle.bindArgs(t.map(_.tree)))
   }
 
   def unbind[R: c.WeakTypeTag, O: c.WeakTypeTag]

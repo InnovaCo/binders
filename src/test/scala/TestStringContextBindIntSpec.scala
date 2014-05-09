@@ -1,5 +1,3 @@
-import eu.inn.binders.naming.CamelCaseToSnakeCaseConverter
-import org.scalatest.FlatSpec
 
 /*
 
