@@ -190,11 +190,11 @@ private trait BinderImplementation {
     val iteratorTerm = newTermName(c.fresh("$iterator"))
     val objResultTerm = newTermName(c.fresh("$result"))
 
-    val hasCall = Select(Ident(iteratorTerm), "hasNext")
+    val hasCall = Select(Ident(iteratorTerm), newTermName("hasNext"))
 
     // get first element
     val nextRowTerm = newTermName(c.fresh("$nextRow"))
-    val nextRowCall = Apply(Select(Ident(iteratorTerm), "next"), List())
+    val nextRowCall = Apply(Select(Ident(iteratorTerm), newTermName("next")), List())
     val valsNextItem = List(
       ValDef(Modifiers(), nextRowTerm, Select(Ident(rowsTerm), newTypeName("rowType")), nextRowCall)
     )
@@ -202,7 +202,7 @@ private trait BinderImplementation {
     val unbindCall = Block(valsNextItem,
       Apply(Select(Ident(weakTypeOf[Some.type].termSymbol), "apply"),
         List(
-          TypeApply(Select(Ident(nextRowTerm), "unbind"), List(Ident(weakTypeOf[O].typeSymbol)))
+          TypeApply(Select(Ident(nextRowTerm), newTermName("unbind")), List(Ident(weakTypeOf[O].typeSymbol)))
         )
       )
     )
@@ -231,11 +231,11 @@ private trait BinderImplementation {
 
     val unbindCall = Function(
       List(ValDef(Modifiers(Flag.PARAM), rowTerm, Select(Ident(rowsTerm), newTypeName("rowType")), EmptyTree)),
-      TypeApply(Select(Ident(rowTerm), "unbind"), List(Ident(weakTypeOf[O].typeSymbol)))
+      TypeApply(Select(Ident(rowTerm), newTermName("unbind")), List(Ident(weakTypeOf[O].typeSymbol)))
     )
 
     // map iterator
-    val mapCall = Apply(Select(Ident(iteratorTerm), "map"), List(unbindCall))
+    val mapCall = Apply(Select(Ident(iteratorTerm), newTermName("map")), List(unbindCall))
 
     val vals = List(
       ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
@@ -286,9 +286,9 @@ private trait BinderImplementation {
     var mTypeArgs: Map[Symbol, Type] = Map()
     setters.map({ m =>
 
-      val idxSymbol = m.paramss.head(0);
+      val idxSymbol = m.paramss.head(0)
       // parSym 1 (index/name)
-      val methodParSym = m.paramss.head(1); // parSym 2 (value)
+      val methodParSym = m.paramss.head(1) // parSym 2 (value)
 
       if (if (byIndex) idxSymbol.typeSignature =:= typeOf[Int] else idxSymbol.typeSignature =:= typeOf[String]) {
 
