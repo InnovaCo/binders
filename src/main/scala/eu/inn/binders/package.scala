@@ -10,9 +10,9 @@ package object binders {
   implicit class StatementBindOps[S <: Statement[_]](val stmt: S) {
     def bindParameter[O](index: Int, obj: O) = macro BinderProxy.bindParameter[S, O]
 
-    def bindClass[O](obj: O) = macro BinderProxy.bindClass[S, O]
+    def bind[O](obj: O) = macro BinderProxy.bind[S, O]
 
-    def bindClassPartial[O](obj: O) = macro BinderProxy.bindClassPartial[S, O]
+    def bindPartial[O](obj: O) = macro BinderProxy.bindPartial[S, O]
 
     def bindArgs(t: Any*) = macro BinderProxy.bindArgs
   }

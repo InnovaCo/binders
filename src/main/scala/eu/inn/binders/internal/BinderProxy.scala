@@ -18,7 +18,7 @@ object BinderProxy {
     c.Expr[Any](bundle.bindParameter[S, O](index.tree, obj.tree))
   }
 
-  def bindClass[S: c.WeakTypeTag, O: c.WeakTypeTag]
+  def bind[S: c.WeakTypeTag, O: c.WeakTypeTag]
   (c: Context)
   (obj: c.Expr[O]): c.Expr[Any] = {
 
@@ -26,10 +26,10 @@ object BinderProxy {
     val bundle = new {
       val c: c0.type = c0
     } with BinderImplementation
-    c.Expr[Any](bundle.bindClass[S, O](obj.tree, true))
+    c.Expr[Any](bundle.bind[S, O](obj.tree, true))
   }
 
-  def bindClassPartial[S: c.WeakTypeTag, O: c.WeakTypeTag]
+  def bindPartial[S: c.WeakTypeTag, O: c.WeakTypeTag]
   (c: Context)
   (obj: c.Expr[O]): c.Expr[Any] = {
 
@@ -37,7 +37,7 @@ object BinderProxy {
     val bundle = new {
       val c: c0.type = c0
     } with BinderImplementation
-    c.Expr[Any](bundle.bindClass[S, O](obj.tree, false))
+    c.Expr[Any](bundle.bind[S, O](obj.tree, false))
   }
 
   def bindArgs(c: Context)

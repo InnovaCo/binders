@@ -43,7 +43,7 @@ private trait BinderImplementation {
     block
   }
 
-  def bindClass[S: c.WeakTypeTag, O: c.WeakTypeTag](obj: c.Tree, partial: Boolean): c.Tree = {
+  def bind[S: c.WeakTypeTag, O: c.WeakTypeTag](obj: c.Tree, partial: Boolean): c.Tree = {
     val setters = extractSetters[S]
     // println("setters: " + setters)
     val converter = findConverter[S]

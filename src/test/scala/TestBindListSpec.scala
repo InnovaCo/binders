@@ -9,7 +9,7 @@ class TestBindListSpec extends FlatSpec with Matchers {
   "Case class with List[T] and Set[T] " should " be bound to statement by names " in {
     val m = mock[TestStatement[PlainConverter]]
     val tcl = TestCollections(List(123456, 7890), Set("aaa", "bbb"), Map(1l -> "a", 2l -> "b"))
-    m.bindClass(tcl)
+    m.bind(tcl)
     verify(m).setList("intLst", List(123456, 7890))
     verify(m).setSet("strSet", Set("aaa", "bbb"))
     verify(m).setMap("longStrMap", Map(1l -> "a", 2l -> "b"))
@@ -27,7 +27,7 @@ class TestBindListSpec extends FlatSpec with Matchers {
   "Case class with Option[Map[K,V]] " should " be bound to statement by names " in {
     val m = mock[TestStatement[PlainConverter]]
     val tcl = TestGenericCollections(Some(Map("1" -> Set(5, 6, 7))), None)
-    m.bindClass(tcl)
+    m.bind(tcl)
     verify(m).setGenericMap("genericMap", Some(Map("1" -> Set(5, 6, 7))))
     verify(m).setGenericMap("genericMapNone", None)
   }
