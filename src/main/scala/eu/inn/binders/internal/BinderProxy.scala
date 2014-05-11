@@ -6,7 +6,6 @@ import language.experimental.macros
 
 object BinderProxy {
 
-  // todo: return S ?
   def bindParameter[S: c.WeakTypeTag, O: c.WeakTypeTag]
   (c: Context)
   (index: c.Expr[Int], obj: c.Expr[O]): c.Expr[Any] = {
