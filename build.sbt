@@ -12,8 +12,6 @@ crossScalaVersions := Seq("2.11.2", "2.10.4")
 
 resolvers ++= Seq("Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/")
 
-libraryDependencies <+= scalaVersion(scalatestDependency(_))
-
 libraryDependencies += "org.mockito" % "mockito-all" % "1.9.5" % "test"
 
 libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
