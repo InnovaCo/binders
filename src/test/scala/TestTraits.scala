@@ -61,7 +61,7 @@ trait TestStatement[C <: Converter] extends Statement[TestRows[C]] {
 
   def setGenericMap[K, V](name: String, value: Option[Map[K, V]])
 
-  override def execute: TestRows[C] = {
+  override def execute(): TestRows[C] = {
     new Object with TestRows[C] {
       override def iterator = Iterator.empty
     }
@@ -69,7 +69,7 @@ trait TestStatement[C <: Converter] extends Statement[TestRows[C]] {
 }
 
 class TestQuery[C <: Converter](statement: TestStatement[C]) extends Query[TestStatement[C]] {
-  override def createStatement: TestStatement[C] = statement
+  override def createStatement(): TestStatement[C] = statement
 }
 
 case class TestInt(intValue1: Int, nullableValue: Option[Int], intValue2: Int)

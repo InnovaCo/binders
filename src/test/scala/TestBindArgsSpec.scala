@@ -10,7 +10,7 @@ class TestBindArgsSpec extends FlatSpec with Matchers {
     val m = mock[TestStatement[PlainConverter]]
     val q = new TestQuery(m)
     val noneInt: Option[Int] = None
-    val stmt = q.createStatement
+    val stmt = q.createStatement()
     stmt.bindArgs(10, Some(3), noneInt)
     verify(m).setInt(0, 10)
     verify(m).setIntNullable(1, Some(3))
@@ -20,7 +20,7 @@ class TestBindArgsSpec extends FlatSpec with Matchers {
   "TestStatement " should " should bind arguments from case class by name" in {
     val m = mock[TestStatement[PlainConverter]]
     val q = new TestQuery(m)
-    val stmt = q.createStatement
+    val stmt = q.createStatement()
     stmt.bind(TestInt(10, Some(555), 20))
     verify(m).setInt("intValue1", 10)
     verify(m).setIntNullable("nullableValue", Some(555))
@@ -30,7 +30,7 @@ class TestBindArgsSpec extends FlatSpec with Matchers {
   "TestStatement " should " should bind arguments from case class by name with specified naming convention" in {
     val m = mock[TestStatement[CamelCaseToSnakeCaseConverter]]
     val q = new TestQuery(m)
-    val stmt = q.createStatement
+    val stmt = q.createStatement()
     stmt.bind(TestInt(10, Some(555), 20))
     verify(m).setInt("int_value1", 10)
     verify(m).setIntNullable("nullable_value", Some(555))
