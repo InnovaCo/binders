@@ -2,7 +2,7 @@ import sbt.Keys._
 
 name := "binders-core"
 
-version := "0.2.2"
+version := "0.2.3"
 
 organization := "eu.inn"
 
