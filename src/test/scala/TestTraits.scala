@@ -63,7 +63,7 @@ trait TestStatement[C <: Converter] extends Statement[TestRows[C]] {
 
   override def execute(): TestRows[C] = {
     new Object with TestRows[C] {
-      override def iterator = Iterator.empty
+      override def iterator() = Iterator.empty
     }
   }
 }

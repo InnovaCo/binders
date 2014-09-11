@@ -43,7 +43,7 @@ class TestUnbindIntSpec extends FlatSpec with Matchers {
     when(m.getInt("intValue2")).thenReturn(789)
 
     val m2 = mock[TestRows[PlainConverter]]
-    when(m2.iterator).thenReturn(Seq(m).toIterator)
+    when(m2.iterator()).thenReturn(Seq(m).toIterator)
 
     val t = m2.unbindOne[TestInt]
     assert(t === Some(TestInt(123456, Some(555), 789)))
@@ -61,7 +61,7 @@ class TestUnbindIntSpec extends FlatSpec with Matchers {
     when(m2.getInt("intValue2")).thenReturn(987)
 
     val m3 = mock[TestRows[PlainConverter]]
-    when(m3.iterator).thenReturn(Seq(m1, m2).toIterator)
+    when(m3.iterator()).thenReturn(Seq(m1, m2).toIterator)
 
     val t = m3.unbindAll[TestInt].toSeq
     assert(t === Seq(TestInt(123456, Some(555), 789), TestInt(654321, None, 987)))
