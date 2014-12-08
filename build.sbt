@@ -2,21 +2,21 @@ import sbt.Keys._
 
 name := "binders-core"
 
-version := "0.2.3"
+version := "0.3.0"
 
 organization := "eu.inn"
 
-scalaVersion := "2.11.2"
+scalaVersion := "2.11.4"
 
-crossScalaVersions := Seq("2.11.2", "2.10.4")
+crossScalaVersions := Seq("2.11.4", "2.10.4")
 
 resolvers ++= Seq("Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/")
 
-libraryDependencies += "org.mockito" % "mockito-all" % "1.9.5" % "test"
+libraryDependencies += "org.mockito" % "mockito-all" % "1.10.14" % "test"
 
 libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 
-libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.0" % "test"
+libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.1" % "test"
 
 // Sonatype repositary publish options
 publishMavenStyle := true
