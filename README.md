@@ -1,5 +1,8 @@
 # binders
 
+**TODO**
+new description needed
+
 **Binders** is lightweight object mapper libraries for Scala <-> Databases targeted to minimize boilerplate code to communicate with database in efficient way.
 
 binders is too far from the being ORM. It's just a helper for binding to and from db specific object such as Statement, ResultSet and Row with the support of Scala Macros.

@@ -16,13 +16,13 @@ private trait BinderImplementation {
     // println("setters: " + setters)
 
     val thisTerm = newTermName(c.fresh("$this"))
-    val stmtTerm = newTermName(c.fresh("$stmt"))
+    val serializerTerm = newTermName(c.fresh("$srlz"))
     val indexTerm = newTermName(c.fresh("$index"))
     val objTerm = newTermName(c.fresh("$obj"))
 
     val vals = List(
       ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
-      ValDef(Modifiers(), stmtTerm, TypeTree(), Select(Ident(thisTerm), newTermName("stmt"))),
+      ValDef(Modifiers(), serializerTerm, TypeTree(), Select(Ident(thisTerm), newTermName("serializer"))),
       ValDef(Modifiers(), indexTerm, TypeTree(), index),
       ValDef(Modifiers(), objTerm, TypeTree(weakTypeTag[O].tpe), obj)
     )
@@ -35,10 +35,10 @@ private trait BinderImplementation {
 
     // println ("wholeParamSetter = " + wholeParamSetter)
     val listOfCalls: List[Tree] = wholeParamSetter.map { m =>
-      makeSetterGetterCall(stmtTerm, m, wholeParamTypeArgs, List(Ident(indexTerm), Ident(objTerm)))
+      makeSetterGetterCall(serializerTerm, m, wholeParamTypeArgs, List(Ident(indexTerm), Ident(objTerm)))
     }.toList
 
-    val block = Block(vals ++ listOfCalls, Ident(stmtTerm))
+    val block = Block(vals ++ listOfCalls, Ident(serializerTerm))
     // println(block)
     block
   }
@@ -49,12 +49,12 @@ private trait BinderImplementation {
     val converter = findConverter[S]
 
     val thisTerm = newTermName(c.fresh("$this"))
-    val stmtTerm = newTermName(c.fresh("$stmt"))
+    val serializerTerm = newTermName(c.fresh("$srlz"))
     val objTerm = newTermName(c.fresh("$obj"))
 
     val vals = List(
       ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
-      ValDef(Modifiers(), stmtTerm, TypeTree(), Select(Ident(thisTerm), newTermName("stmt"))),
+      ValDef(Modifiers(), serializerTerm, TypeTree(), Select(Ident(thisTerm), newTermName("serializer"))),
       ValDef(Modifiers(), objTerm, TypeTree(weakTypeTag[O].tpe), obj)
     )
 
@@ -68,14 +68,14 @@ private trait BinderImplementation {
 
         // println("found setter for " + parameter + " : " + setter)
         val setterCall =
-          makeSetterGetterCall(stmtTerm, setter, callTypeArgs,
+          makeSetterGetterCall(serializerTerm, setter, callTypeArgs,
             List(
               parameterLiteral(parameter, converter),
               Select(Ident(objTerm), newTermName(parameter.name.decoded))
             )
           )
 
-        val hasCall = Apply(Select(Ident(stmtTerm), newTermName("hasParameter")),
+        val hasCall = Apply(Select(Ident(serializerTerm), newTermName("hasField")),
           List(parameterLiteral(parameter, converter)))
 
         if (partial)
@@ -89,14 +89,14 @@ private trait BinderImplementation {
       call
     }
 
-    val block = Block(vals ++ listOfCalls, Ident(stmtTerm))
+    val block = Block(vals ++ listOfCalls, Ident(serializerTerm))
     // println(block)
     block
   }
 
   def bindArgs(args: Seq[c.Tree]): c.Tree = {
     val thisTerm = newTermName(c.fresh("$this"))
-    val stmtTerm = newTermName(c.fresh("$stmt"))
+    val serializerTerm = newTermName(c.fresh("$srlz"))
 
     val bindAllParameters =
       args.zipWithIndex.map {
@@ -106,7 +106,7 @@ private trait BinderImplementation {
           val term = newTermName(c.fresh("$t0"))
           val vdef = ValDef(Modifiers(), term, TypeTree(), t)
           val bindCall = Apply(
-            Select(Ident(stmtTerm), "bindParameter"),
+            Select(Ident(serializerTerm), "bindParameter"),
             List(Literal(Constant(index)),
               Ident(term))
           )
@@ -116,10 +116,10 @@ private trait BinderImplementation {
     val block = Block(
       List(
         ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
-        ValDef(Modifiers(), stmtTerm, TypeTree(), Select(Ident(thisTerm), newTermName("stmt")))
+        ValDef(Modifiers(), serializerTerm, TypeTree(), Select(Ident(thisTerm), newTermName("serializer")))
       ) ++
         bindAllParameters,
-      Ident(stmtTerm)
+      Ident(serializerTerm)
     )
     //println(block)
     block
@@ -135,7 +135,7 @@ private trait BinderImplementation {
     // println(caseClassParams)
 
     val thisTerm = newTermName(c.fresh("$this"))
-    val rowTerm = newTermName(c.fresh("$row"))
+    val dsrlzTerm = newTermName(c.fresh("$dsrlz"))
     val objResultTerm = newTermName(c.fresh("$obj"))
     val objOrigTerm = newTermName(c.fresh("$objOrig"))
 
@@ -143,10 +143,10 @@ private trait BinderImplementation {
       caseClassParams.map {
         parameter =>
           val getter = findGetter(getters, parameter)
-          val apply = makeSetterGetterCall(rowTerm, getter._1, getter._2, List(parameterLiteral(parameter, converter)))
+          val apply = makeSetterGetterCall(dsrlzTerm, getter._1, getter._2, List(parameterLiteral(parameter, converter)))
           if (partial) {
             val fromObjOrig = Select(Ident(objOrigTerm), newTermName(parameter.name.decoded))
-            val hasCall = Apply(Select(Ident(rowTerm), newTermName("hasField")), List(parameterLiteral(parameter, converter)))
+            val hasCall = Apply(Select(Ident(dsrlzTerm), newTermName("hasField")), List(parameterLiteral(parameter, converter)))
             val iff: Tree = If(hasCall, apply, /*else*/ fromObjOrig)
             (newTermName(c.fresh("$arg1")), iff, parameter)
           }
@@ -159,7 +159,7 @@ private trait BinderImplementation {
 
     val vals = List(
       ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
-      ValDef(Modifiers(), rowTerm, TypeTree(), Select(Ident(thisTerm), newTermName("row")))
+      ValDef(Modifiers(), dsrlzTerm, TypeTree(), Select(Ident(thisTerm), newTermName("deserializer")))
     )
 
     val applyVals = applyParams.map(p => {
@@ -186,23 +186,23 @@ private trait BinderImplementation {
 
   def unbindOne[RS: c.WeakTypeTag, O: c.WeakTypeTag]: c.Tree = {
     val thisTerm = newTermName(c.fresh("$this"))
-    val rowsTerm = newTermName(c.fresh("$rows"))
+    val deserializerTerm = newTermName(c.fresh("$dsrlz"))
     val iteratorTerm = newTermName(c.fresh("$iterator"))
     val objResultTerm = newTermName(c.fresh("$result"))
 
     val hasCall = Select(Ident(iteratorTerm), newTermName("hasNext"))
 
     // get first element
-    val nextRowTerm = newTermName(c.fresh("$nextRow"))
-    val nextRowCall = Apply(Select(Ident(iteratorTerm), newTermName("next")), List())
+    val nextTerm = newTermName(c.fresh("$next"))
+    val nextCall = Apply(Select(Ident(iteratorTerm), newTermName("next")), List())
     val valsNextItem = List(
-      ValDef(Modifiers(), nextRowTerm, Select(Ident(rowsTerm), newTypeName("rowType")), nextRowCall)
+      ValDef(Modifiers(), nextTerm, TypeTree(), nextCall)
     )
 
     val unbindCall = Block(valsNextItem,
       Apply(Select(Ident(weakTypeOf[Some.type].termSymbol), "apply"),
         List(
-          TypeApply(Select(Ident(nextRowTerm), newTermName("unbind")), List(Ident(weakTypeOf[O].typeSymbol)))
+          TypeApply(Select(Ident(nextTerm), newTermName("unbind")), List(Ident(weakTypeOf[O].typeSymbol)))
         )
       )
     )
@@ -212,8 +212,8 @@ private trait BinderImplementation {
 
     val vals = List(
       ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
-      ValDef(Modifiers(), rowsTerm, TypeTree(), Select(Ident(thisTerm), newTermName("rows"))),
-      ValDef(Modifiers(), iteratorTerm, TypeTree(), Select(Ident(rowsTerm), newTermName("iterator"))),
+      ValDef(Modifiers(), deserializerTerm, TypeTree(), Select(Ident(thisTerm), newTermName("deserializer"))),
+      ValDef(Modifiers(), iteratorTerm, TypeTree(), Select(Ident(deserializerTerm), newTermName("iterator"))),
       ValDef(Modifiers(), objResultTerm, TypeTree(), ifCall)
     )
 
@@ -224,14 +224,14 @@ private trait BinderImplementation {
 
   def unbindAll[RS: c.WeakTypeTag, O: c.WeakTypeTag]: c.Tree = {
     val thisTerm = newTermName(c.fresh("$this"))
-    val rowsTerm = newTermName(c.fresh("$rows"))
-    val rowTerm = newTermName(c.fresh("$row"))
+    val deserializerTerm = newTermName(c.fresh("$dsrlz"))
+    val elemTerm = newTermName(c.fresh("$elem"))
     val iteratorTerm = newTermName(c.fresh("$iterator"))
     val objResultTerm = newTermName(c.fresh("$result"))
 
     val unbindCall = Function(
-      List(ValDef(Modifiers(Flag.PARAM), rowTerm, Select(Ident(rowsTerm), newTypeName("rowType")), EmptyTree)),
-      TypeApply(Select(Ident(rowTerm), newTermName("unbind")), List(Ident(weakTypeOf[O].typeSymbol)))
+      List(ValDef(Modifiers(Flag.PARAM), elemTerm, TypeTree(), EmptyTree)),
+      TypeApply(Select(Ident(elemTerm), newTermName("unbind")), List(Ident(weakTypeOf[O].typeSymbol)))
     )
 
     // map iterator
@@ -239,8 +239,8 @@ private trait BinderImplementation {
 
     val vals = List(
       ValDef(Modifiers(), thisTerm, TypeTree(), c.prefix.tree),
-      ValDef(Modifiers(), rowsTerm, TypeTree(), Select(Ident(thisTerm), newTermName("rows"))),
-      ValDef(Modifiers(), iteratorTerm, TypeTree(), Select(Ident(rowsTerm), newTermName("iterator"))),
+      ValDef(Modifiers(), deserializerTerm, TypeTree(), Select(Ident(thisTerm), newTermName("deserializer"))),
+      ValDef(Modifiers(), iteratorTerm, TypeTree(), Select(Ident(deserializerTerm), newTermName("iterator"))),
       ValDef(Modifiers(), objResultTerm, TypeTree(), mapCall)
     )
 
@@ -266,8 +266,8 @@ private trait BinderImplementation {
 
   }
 
-  private def makeSetterGetterCall(rowTerm: TermName, method: MethodSymbol, methodTypeArgs: Map[Symbol, Type], parameters: List[Tree]): Apply = {
-    val inner = Apply(applyTypeArgs(Select(Ident(rowTerm), method), methodTypeArgs, method.typeParams), parameters)
+  private def makeSetterGetterCall(elemTerm: TermName, method: MethodSymbol, methodTypeArgs: Map[Symbol, Type], parameters: List[Tree]): Apply = {
+    val inner = Apply(applyTypeArgs(Select(Ident(elemTerm), method), methodTypeArgs, method.typeParams), parameters)
     method.paramss.tail.foldLeft(inner) { (a: Apply, params: List[Symbol]) =>
       Apply(a,
         params.map(p =>

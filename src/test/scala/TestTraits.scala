@@ -1,9 +1,9 @@
-import eu.inn.binders.core.{Statement, Rows, Row, Query}
+import eu.inn.binders.core.{Serializer, Deserializer}
 import eu.inn.binders.naming.Converter
 import java.util.Date
 
-trait TestRow[C <: Converter] extends Row {
-  type nameConverterType = C
+trait TestDeserializer[C <: Converter] extends Deserializer[C] {
+  //type nameConverterType = C
 
   def getInt(name: String): Int
 
@@ -24,14 +24,14 @@ trait TestRow[C <: Converter] extends Row {
   def getMap[K, V](name: String): Map[K, V]
 
   def getGenericMap[K, V](name: String): Option[Map[K, V]]
+
+  def hasField(fieldName: String): Boolean = ???
+
+  def iterator(): Iterator[TestDeserializer[C]] = ???
 }
 
-trait TestRows[C <: Converter] extends Rows[TestRow[C]] {
-
-}
-
-trait TestStatement[C <: Converter] extends Statement[TestRows[C]] {
-  type nameConverterType = C
+trait TestSerializer[C <: Converter] extends Serializer[C] {
+  //type nameConverterType = C
 
   def setInt(index: Int, value: Int)
 
@@ -60,16 +60,6 @@ trait TestStatement[C <: Converter] extends Statement[TestRows[C]] {
   def setMap[K, V](name: String, value: Map[K, V])
 
   def setGenericMap[K, V](name: String, value: Option[Map[K, V]])
-
-  override def execute(): TestRows[C] = {
-    new Object with TestRows[C] {
-      override def iterator() = Iterator.empty
-    }
-  }
-}
-
-class TestQuery[C <: Converter](statement: TestStatement[C]) extends Query[TestStatement[C]] {
-  override def createStatement(): TestStatement[C] = statement
 }
 
 case class TestInt(intValue1: Int, nullableValue: Option[Int], intValue2: Int)
