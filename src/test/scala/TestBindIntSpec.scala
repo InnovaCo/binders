@@ -29,12 +29,12 @@ class TestBindIntSpec extends FlatSpec with Matchers {
     val i1 = 123456
     val i2 = Some(555)
     val i3 = 7890
-    m.bindParameter(0, i1)
-    m.bindParameter(1, i2)
-    m.bindParameter(2, i3)
-    verify(m).setInt(0, 123456)
-    verify(m).setIntNullable(1, Some(555))
-    verify(m).setInt(2, 7890)
+    m.bindNext(i1)
+    m.bindNext(i2)
+    m.bindNext(i3)
+    verify(m).addInt(123456)
+    verify(m).addIntNullable(Some(555))
+    verify(m).addInt(7890)
     verifyNoMoreInteractions(m)
   }
 
@@ -44,9 +44,9 @@ class TestBindIntSpec extends FlatSpec with Matchers {
     val i2 = Some(555)
     val i3 = 7890
     m.bindArgs(i1, i2, i3)
-    verify(m).setInt(0, 123456)
-    verify(m).setIntNullable(1, Some(555))
-    verify(m).setInt(2, 7890)
+    verify(m).addInt(123456)
+    verify(m).addIntNullable(Some(555))
+    verify(m).addInt(7890)
     verifyNoMoreInteractions(m)
   }
 

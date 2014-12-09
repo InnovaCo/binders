@@ -6,37 +6,37 @@ import language.experimental.macros
 
 object BinderProxy {
 
-  def bindParameter[S: c.WeakTypeTag, O: c.WeakTypeTag]
+  def bindNext[S: c.WeakTypeTag, O: c.WeakTypeTag]
   (c: Context)
-  (index: c.Expr[Int], obj: c.Expr[O]): c.Expr[Any] = {
+  (value: c.Expr[O]): c.Expr[Any] = {
 
     val c0: c.type = c
     val bundle = new {
       val c: c0.type = c0
     } with BinderImplementation
-    c.Expr[Any](bundle.bindParameter[S, O](index.tree, obj.tree))
+    c.Expr[Any](bundle.bindNext[S, O](value.tree))
   }
 
   def bind[S: c.WeakTypeTag, O: c.WeakTypeTag]
   (c: Context)
-  (obj: c.Expr[O]): c.Expr[Any] = {
+  (value: c.Expr[O]): c.Expr[Any] = {
 
     val c0: c.type = c
     val bundle = new {
       val c: c0.type = c0
     } with BinderImplementation
-    c.Expr[Any](bundle.bind[S, O](obj.tree, true))
+    c.Expr[Any](bundle.bind[S, O](value.tree, true))
   }
 
   def bindPartial[S: c.WeakTypeTag, O: c.WeakTypeTag]
   (c: Context)
-  (obj: c.Expr[O]): c.Expr[Any] = {
+  (value: c.Expr[O]): c.Expr[Any] = {
 
     val c0: c.type = c
     val bundle = new {
       val c: c0.type = c0
     } with BinderImplementation
-    c.Expr[Any](bundle.bind[S, O](obj.tree, false))
+    c.Expr[Any](bundle.bind[S, O](value.tree, false))
   }
 
   def bindArgs(c: Context)
@@ -61,13 +61,13 @@ object BinderProxy {
 
   def unbindPartial[R: c.WeakTypeTag, O: c.WeakTypeTag]
   (c: Context)
-  (obj: c.Expr[O]): c.Expr[O] = {
+  (originalValue: c.Expr[O]): c.Expr[O] = {
 
     val c0: c.type = c
     val bundle = new {
       val c: c0.type = c0
     } with BinderImplementation
-    c.Expr[O](bundle.unbind[R, O](true, obj.tree))
+    c.Expr[O](bundle.unbind[R, O](true, originalValue.tree))
   }
 
   def unbindOne[RS: c.WeakTypeTag, O: c.WeakTypeTag]

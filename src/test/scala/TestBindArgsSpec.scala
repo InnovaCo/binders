@@ -10,9 +10,9 @@ class TestBindArgsSpec extends FlatSpec with Matchers {
     val stmt = mock[TestSerializer[PlainConverter]]
     val noneInt: Option[Int] = None
     stmt.bindArgs(10, Some(3), noneInt)
-    verify(stmt).setInt(0, 10)
-    verify(stmt).setIntNullable(1, Some(3))
-    verify(stmt).setIntNullable(2, None)
+    verify(stmt).addInt(10)
+    verify(stmt).addIntNullable(Some(3))
+    verify(stmt).addIntNullable(None)
   }
 
   "TestStatement " should " should bind arguments from case class by name" in {

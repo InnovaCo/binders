@@ -13,10 +13,6 @@ trait TestDeserializer[C <: Converter] extends Deserializer[C] {
 
   def getDateNullable(name: String): Option[Date]
 
-  /*def getList[T: ClassTag](name: String) : List[T]
-  def getSet[T: ClassTag](name: String) : Set[T]
-  def getMap[K: ClassTag, V: ClassTag](name: String) : Map[K,V]*/
-
   def getList[T](name: String): List[T]
 
   def getSet[T](name: String): Set[T]
@@ -33,27 +29,27 @@ trait TestDeserializer[C <: Converter] extends Deserializer[C] {
 trait TestSerializer[C <: Converter] extends Serializer[C] {
   //type nameConverterType = C
 
-  def setInt(index: Int, value: Int)
+  def addInt(value: Int)
 
-  def setIntNullable(index: Int, value: Option[Int])
+  def addIntNullable(value: Option[Int])
 
   def setInt(name: String, value: Int)
 
   def setIntNullable(name: String, value: Option[Int])
 
-  def setDate(index: Int, value: Date)
+  def addDate(value: Date)
 
-  def setDateNullable(index: Int, value: Option[Date])
+  def addDateNullable(value: Option[Date])
 
   def setDate(name: String, value: Date)
 
   def setDateNullable(name: String, value: Option[Date])
 
-  def setList[T](index: Int, value: List[T])
+  def addList[T](value: List[T])
 
   def setList[T](name: String, value: List[T])
 
-  def setSet[T](index: Int, value: Set[T])
+  def addSet[T](value: Set[T])
 
   def setSet[T](name: String, value: Set[T])
 

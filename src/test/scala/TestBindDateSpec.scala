@@ -24,12 +24,12 @@ class TestBindDateSpec extends FlatSpec with Matchers {
 
   "all java.util.Date parameters " should " be bound to statement by indexes " in {
     val m = mock[TestSerializer[PlainConverter]]
-    m.bindParameter(0, yesterday)
-    m.bindParameter(1, Some(yesterday))
-    m.bindParameter(2, now)
-    verify(m).setDate(0, yesterday)
-    verify(m).setDateNullable(1, Some(yesterday))
-    verify(m).setDate(2, now)
+    m.bindNext(yesterday)
+    m.bindNext(Some(yesterday))
+    m.bindNext(now)
+    verify(m).addDate(yesterday)
+    verify(m).addDateNullable(Some(yesterday))
+    verify(m).addDate(now)
     verifyNoMoreInteractions(m)
   }
 
