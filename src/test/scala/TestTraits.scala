@@ -26,6 +26,10 @@ trait TestDeserializer[C <: Converter] extends Deserializer[C] {
   def iterator(): Iterator[TestDeserializer[C]] = ???
 
   def getAsInt: Int = ???
+
+  def getFieldDeserializer(fieldName: String): TestDeserializer[C] = ???
+
+  def getNullableFieldDeserializer(fieldName: String): Option[TestDeserializer[C]] = ???
 }
 
 trait TestSerializer[C <: Converter] extends Serializer[C] {
@@ -67,3 +71,6 @@ case class TestDate(dateValue1: Date, nullableValue: Option[Date], dateValue2: D
 case class TestCollections(intLst: List[Int], strSet: Set[String], longStrMap: Map[Long, String])
 
 case class TestGenericCollections(genericMap: Option[Map[String, Set[Int]]], genericMapNone: Option[Map[String, Set[Int]]])
+
+//case class TestInnerClass(inner: TestInt/*, nulableInner: Option[TestInt], nulableInner1: Option[TestInt]*/)
+case class TestInnerClass(inner: TestInt, nullableInner: Option[TestInt], nullableInner1: Option[TestInt])

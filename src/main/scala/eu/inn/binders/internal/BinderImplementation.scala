@@ -1,5 +1,7 @@
 package eu.inn.internal
 
+import eu.inn.binders.core.Deserializer
+
 import scala.language.reflectiveCalls
 import scala.reflect.macros.Context
 import language.experimental.macros
@@ -169,19 +171,52 @@ private trait BinderImplementation {
       caseClassParams.map {
         parameter =>
           val getter = findGetter(getters, parameter.typeSignature)
-          if (!getter._1.isDefined)
-            c.abort(c.enclosingPosition, s"No getter function found for parameter $parameter: ${parameter.typeSignature}")
-
-          val apply = makeSetterGetterCall(dsrlzTerm, getter._1.get, getter._2, List(parameterLiteral(parameter, converter)))
-          if (partial) {
-            val fromObjOrig = Select(Ident(objOrigTerm), newTermName(parameter.name.decoded))
-            val hasCall = Apply(Select(Ident(dsrlzTerm), newTermName("hasField")), List(parameterLiteral(parameter, converter)))
-            val iff: Tree = If(hasCall, apply, /*else*/ fromObjOrig)
-            (newTermName(c.fresh("$arg1")), iff, parameter)
+          val apply = if (getter._1.isDefined) {
+            makeSetterGetterCall(dsrlzTerm, getter._1.get, getter._2, List(parameterLiteral(parameter, converter)))
           }
           else {
-            (newTermName(c.fresh("$arg1")), apply, parameter)
+            val innerDslrz = findGetter(getters, weakTypeTag[Option[R]].tpe)
+            // println("retn = " + parameter.typeSignature)
+            if (innerDslrz._1.isDefined && parameter.typeSignature <:< typeOf[Option[_]]) {
+              val elemTerm = newTermName(c.fresh("$elem"))
+              val getc = makeSetterGetterCall(dsrlzTerm, innerDslrz._1.get, innerDslrz._2, List(parameterLiteral(parameter, converter)))
+
+              val typeArgs = parameter.typeSignature match {
+                case TypeRef(_, _, args) => args.map(x ⇒ TypeTree(x))
+                case _ ⇒
+                  c.abort(c.enclosingPosition, s"Can't extract typeArgs from $parameter: ${parameter.typeSignature}")
+              }
+
+              val unbindCall = Function(
+                List(ValDef(Modifiers(Flag.PARAM), elemTerm, TypeTree(), EmptyTree)),
+                TypeApply(Select(Ident(elemTerm), newTermName("unbind")), typeArgs)
+              )
+
+              // map iterator
+              val mapCall = Apply(Select(getc, newTermName("map")), List(unbindCall))
+              // println("call = " + mapCall)
+              mapCall
+            }
+            else {
+              val innerDslrz = findGetter(getters, weakTypeTag[R].tpe)
+              if (innerDslrz._1.isDefined) {
+                val getc = makeSetterGetterCall(dsrlzTerm, innerDslrz._1.get, innerDslrz._2, List(parameterLiteral(parameter, converter)))
+                TypeApply(Select(getc, newTermName("unbind")), List(TypeTree(parameter.typeSignature)))
+              }
+              else
+                c.abort(c.enclosingPosition, s"No getter function found for parameter $parameter: ${parameter.typeSignature}")
+            }
           }
+
+        if (partial) {
+          val fromObjOrig = Select(Ident(objOrigTerm), newTermName(parameter.name.decoded))
+          val hasCall = Apply(Select(Ident(dsrlzTerm), newTermName("hasField")), List(parameterLiteral(parameter, converter)))
+          val iff: Tree = If(hasCall, apply, /*else*/ fromObjOrig)
+          (newTermName(c.fresh("$arg1")), iff, parameter)
+        }
+        else {
+          (newTermName(c.fresh("$arg1")), apply, parameter)
+        }
       }.toList
 
     val outputCompanionSymbol = weakTypeOf[O].typeSymbol.companionSymbol
@@ -279,7 +314,7 @@ private trait BinderImplementation {
 
   private def applyTypeArgs(select: Select, srcTypeArgs: Map[Symbol, Type], dstTypeParams: List[Symbol]) = {
     // println("typeArgs == " + srcTypeArgs + " dstTypes == " + dstTypeParams)
-    if (srcTypeArgs.isEmpty)
+    if (srcTypeArgs.isEmpty || dstTypeParams.isEmpty)
       select
     else {
       TypeApply(select,
