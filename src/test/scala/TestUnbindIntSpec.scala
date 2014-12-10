@@ -66,4 +66,25 @@ class TestUnbindIntSpec extends FlatSpec with Matchers {
     val t = m3.unbindAll[TestInt].toSeq
     assert(t === Seq(TestInt(123456, Some(555), 789), TestInt(654321, None, 987)))
   }
+
+  "int " should " be deserialized as is" in {
+    val m = mock[TestDeserializer[PlainConverter]]
+    when(m.getAsInt).thenReturn(123456)
+    val t = m.unbind[Int]
+    assert(t === 123456)
+  }
+
+  "Sequence of Ints " should " be created from all elements" in {
+    val m1 = mock[TestDeserializer[PlainConverter]]
+    when(m1.getAsInt).thenReturn(123)
+
+    val m2 = mock[TestDeserializer[PlainConverter]]
+    when(m2.getAsInt).thenReturn(456)
+
+    val m3 = mock[TestDeserializer[PlainConverter]]
+    when(m3.iterator()).thenReturn(Seq(m1, m2).toIterator)
+
+    val t = m3.unbindAll[Int].toSeq
+    assert(t === Seq(123,456))
+  }
 }

@@ -24,6 +24,8 @@ trait TestDeserializer[C <: Converter] extends Deserializer[C] {
   def hasField(fieldName: String): Boolean = ???
 
   def iterator(): Iterator[TestDeserializer[C]] = ???
+
+  def getAsInt: Int = ???
 }
 
 trait TestSerializer[C <: Converter] extends Serializer[C] {
