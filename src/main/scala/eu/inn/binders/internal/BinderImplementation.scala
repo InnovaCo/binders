@@ -126,7 +126,7 @@ private trait BinderImplementation {
       case NoSymbol => unbindPrimitive[R, O]
       case s => unbindCaseClass[R,O](partial, originalValue)
     }
-    println(s"unbind(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
+    //println(s"unbind(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
     block
   }
 
@@ -193,7 +193,7 @@ private trait BinderImplementation {
         )
       }
 
-    println(s"unbindPrimitive(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
+    //println(s"unbindPrimitive(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
     block
   }
 
@@ -284,7 +284,7 @@ private trait BinderImplementation {
       List(ValDef(Modifiers(), objResultTerm, TypeTree(), applyCall)),
       Ident(objResultTerm))
 
-    println(s"unbindCaseClass(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
+    //println(s"unbindCaseClass(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
     block
   }
 
@@ -349,7 +349,7 @@ private trait BinderImplementation {
     )
 
     val block = Block(vals, Ident(objResultTerm))
-    println(s"unbindAll(${weakTypeTag[RS]} -> ${weakTypeTag[O]}):\n $block")
+    //println(s"unbindAll(${weakTypeTag[RS]} -> ${weakTypeTag[O]}):\n $block")
     block
   }
 
