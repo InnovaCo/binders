@@ -1,7 +1,5 @@
 package eu.inn.internal
 
-import eu.inn.binders.core.Deserializer
-
 import scala.language.reflectiveCalls
 import scala.reflect.macros.Context
 import language.experimental.macros
@@ -128,7 +126,7 @@ private trait BinderImplementation {
       case NoSymbol => unbindPrimitive[R, O]
       case s => unbindCaseClass[R,O](partial, originalValue)
     }
-    println(block)
+    //println(block)
     block
   }
 
@@ -150,14 +148,14 @@ private trait BinderImplementation {
         if (tpe <:< typeOf[TraversableOnce[_]]) { // target field is iterable, try to deserialize it as collection
           Block(
             vals,
-            //TypeApply(Select(Ident(deserializerTerm), newTermName("unbindAll")), List(Ident(weakTypeOf[O].typeSymbol)))
-            //applyTypeArgs(Select(Ident(deserializerTerm), casterMethod.get), casterParamTypeArgs, casterMethod.get.typeParams)
-            //makeSetterGetterCall(deserializerTerm, casterMethod.get, casterParamTypeArgs, Nothing)
-            TypeApply(Select(Ident(deserializerTerm), newTermName("unbindAll")), List(TypeTree(tpe.typeArgs.head)))
+            TypeApply(
+              Select(Ident(deserializerTerm), newTermName("unbindAll")),
+              List(TypeTree(extractTypeArgs(tpe).head))
+            )
           )
         }
         else {
-          println(s"casters: $casters")
+          //println(s"casters: $casters")
           c.abort(c.enclosingPosition, s"No converter function found for ${weakTypeOf[R]} -> $tpe")
         }
       }
@@ -253,17 +251,17 @@ private trait BinderImplementation {
     else
       List()
 
-    val applyCallParams: List[Ident] = applyParams.map(a => Ident(a._1))
-    val applyCall = Block(
-      List(Import(Ident(implicits), List(ImportSelector(nme.WILDCARD, 202, null, -1)))),
-      Apply(Select(Ident(outputCompanionSymbol.name), "apply"), applyCallParams)
-    )
+    val imp = typeOf[eu.inn.binders.internal.UnbindImplicits.type]
+    val imports = List(Import(Ident(imp.termSymbol), List(ImportSelector(nme.WILDCARD, -1, null, -1))))
 
-    val block = Block(vals ++ objOrigVals ++ applyVals ++
+    val applyCallParams: List[Ident] = applyParams.map(a => Ident(a._1))
+    val applyCall = Apply(Select(Ident(outputCompanionSymbol.name), "apply"), applyCallParams)
+
+    val block = Block(imports ++ vals ++ objOrigVals ++ applyVals ++
       List(ValDef(Modifiers(), objResultTerm, TypeTree(), applyCall)),
       Ident(objResultTerm))
 
-    println(block)
+    //println(block)
     block
   }
 
@@ -328,9 +326,18 @@ private trait BinderImplementation {
     )
 
     val block = Block(vals, Ident(objResultTerm))
-    println(block)
+    // println(block)
     block
   }
+
+  private def extractTypeArgs(tpe: Type) = {
+    tpe match {
+      case TypeRef(tpe, sym, args) => {
+        args
+      }
+    }
+  }
+
 
   private def applyTypeArgs(select: Select, srcTypeArgs: Map[Symbol, Type], dstTypeParams: List[Symbol]) = {
     // println("typeArgs == " + srcTypeArgs + " dstTypes == " + dstTypeParams)
