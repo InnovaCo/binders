@@ -126,8 +126,31 @@ private trait BinderImplementation {
       case NoSymbol => unbindPrimitive[R, O]
       case s => unbindCaseClass[R,O](partial, originalValue)
     }
-    //println(block)
+    println(s"unbind(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
     block
+  }
+
+  def convertIterator(ct: Type, iteratorTree: Tree): Tree = {
+    val selector: Option[String] =
+    if (ct <:< typeOf[Vector[_]]) {
+      Some("toVector")
+    }else
+    if (ct <:< typeOf[List[_]]) {
+      Some("toList")
+    }else
+    if (ct <:< typeOf[IndexedSeq[_]]) {
+      Some("toIndexedSeq")
+    }else
+    if (ct <:< typeOf[Seq[_]]) {
+      Some("toSeq")
+    }
+    else
+      None
+    selector.map { s =>
+      Select(iteratorTree, newTermName(s))
+    } getOrElse {
+      iteratorTree
+    }
   }
 
   def unbindPrimitive[R: c.WeakTypeTag, O: c.WeakTypeTag]: c.Tree = {
@@ -148,9 +171,12 @@ private trait BinderImplementation {
         if (tpe <:< typeOf[TraversableOnce[_]]) { // target field is iterable, try to deserialize it as collection
           Block(
             vals,
-            TypeApply(
-              Select(Ident(deserializerTerm), newTermName("unbindAll")),
-              List(TypeTree(extractTypeArgs(tpe).head))
+            convertIterator(
+              tpe,
+              TypeApply(
+                Select(Ident(deserializerTerm), newTermName("unbindAll")),
+                List(TypeTree(extractTypeArgs(tpe).head))
+              )
             )
           )
         }
@@ -167,7 +193,7 @@ private trait BinderImplementation {
         )
       }
 
-    // println(block)
+    println(s"unbindPrimitive(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
     block
   }
 
@@ -251,17 +277,14 @@ private trait BinderImplementation {
     else
       List()
 
-    val imp = typeOf[eu.inn.binders.internal.UnbindImplicits.type]
-    val imports = List(Import(Ident(imp.termSymbol), List(ImportSelector(nme.WILDCARD, -1, null, -1))))
-
     val applyCallParams: List[Ident] = applyParams.map(a => Ident(a._1))
     val applyCall = Apply(Select(Ident(outputCompanionSymbol.name), "apply"), applyCallParams)
 
-    val block = Block(imports ++ vals ++ objOrigVals ++ applyVals ++
+    val block = Block(vals ++ objOrigVals ++ applyVals ++
       List(ValDef(Modifiers(), objResultTerm, TypeTree(), applyCall)),
       Ident(objResultTerm))
 
-    //println(block)
+    println(s"unbindCaseClass(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
     block
   }
 
@@ -326,7 +349,7 @@ private trait BinderImplementation {
     )
 
     val block = Block(vals, Ident(objResultTerm))
-    // println(block)
+    println(s"unbindAll(${weakTypeTag[RS]} -> ${weakTypeTag[O]}):\n $block")
     block
   }
 
