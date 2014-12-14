@@ -68,13 +68,13 @@ private trait BinderImplementation {
         val setterCall =
           makeSetterGetterCall(serializerTerm, setter, callTypeArgs,
             List(
-              parameterLiteral(parameter, converter),
+              identToFieldName(parameter, converter),
               Select(Ident(objTerm), newTermName(parameter.name.decoded))
             )
           )
 
         val hasCall = Apply(Select(Ident(serializerTerm), newTermName("hasField")),
-          List(parameterLiteral(parameter, converter)))
+          List(identToFieldName(parameter, converter)))
 
         if (partial)
           setterCall
@@ -126,7 +126,7 @@ private trait BinderImplementation {
       case NoSymbol => unbindPrimitive[R, O]
       case s => unbindCaseClass[R,O](partial, originalValue)
     }
-    // println(s"unbind(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
+    //println(s"unbind(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
     block
   }
 
@@ -170,7 +170,7 @@ private trait BinderImplementation {
         )
       }
 
-    // println(s"unbindPrimitive(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
+    //println(s"unbindPrimitive(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
     block
   }
 
@@ -189,23 +189,23 @@ private trait BinderImplementation {
       caseClassParams.map {
         parameter =>
           val getter = findGetter(getters, parameter.typeSignature)
-          val pname = parameterLiteral(parameter, converter)
+          val fieldName = identToFieldName(parameter, converter)
           val apply = if (getter._1.isDefined) {
-            makeSetterGetterCall(dsrlzTerm, getter._1.get, getter._2, List(pname))
+            makeSetterGetterCall(dsrlzTerm, getter._1.get, getter._2, List(fieldName))
           }
           else {
             val innerDslrz = findGetter(getters, weakTypeOf[Option[R]])
-            val getc = makeSetterGetterCall(dsrlzTerm, innerDslrz._1.get, innerDslrz._2, List(pname))
+            val getc = makeSetterGetterCall(dsrlzTerm, innerDslrz._1.get, innerDslrz._2, List(fieldName))
             // println("retn = " + parameter.typeSignature)
             if (innerDslrz._1.isDefined) {
               if (parameter.typeSignature <:< typeOf[Option[_]]) {
                 val elemTerm = newTermName(c.fresh("$elem"))
 
-                //val typeArgs = extractTypeArgs(parameter.typeSignature) // todo: ?
+                val typeArgs = extractTypeArgs(parameter.typeSignature).head
 
                 val unbindCall = Function(
                   List(ValDef(Modifiers(Flag.PARAM), elemTerm, TypeTree(), EmptyTree)),
-                  TypeApply(Select(Ident(elemTerm), newTermName("unbind")), List(TypeTree(parameter.typeSignature)))
+                  TypeApply(Select(Ident(elemTerm), newTermName("unbind")), List(typeArgs))
                 )
 
                 val mapCall = Apply(Select(getc, newTermName("map")), List(unbindCall))
@@ -215,7 +215,7 @@ private trait BinderImplementation {
               else {
                 val getWithCheck = Apply(
                   Select(Ident(typeOf[eu.inn.binders.internal.Helpers.type].termSymbol),
-                  newTermName("getFieldOrThrow")), List(getc, pname)
+                  newTermName("getFieldOrThrow")), List(getc, fieldName)
                 )
 
                 TypeApply(
@@ -230,7 +230,7 @@ private trait BinderImplementation {
 
         if (partial) {
           val fromObjOrig = Select(Ident(objOrigTerm), newTermName(parameter.name.decoded))
-          val hasCall = Apply(Select(Ident(dsrlzTerm), newTermName("hasField")), List(parameterLiteral(parameter, converter)))
+          val hasCall = Apply(Select(Ident(dsrlzTerm), newTermName("hasField")), List(fieldName))
           val iff: Tree = If(hasCall, apply, /*else*/ fromObjOrig)
           (newTermName(c.fresh("$arg1")), iff, parameter)
         }
@@ -263,7 +263,7 @@ private trait BinderImplementation {
       List(ValDef(Modifiers(), objResultTerm, TypeTree(), applyCall)),
       Ident(objResultTerm))
 
-    // println(s"unbindCaseClass(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
+    //println(s"unbindCaseClass(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
     block
   }
 
@@ -328,7 +328,7 @@ private trait BinderImplementation {
     )
 
     val block = Block(vals, Ident(objResultTerm))
-    // println(s"unbindAll(${weakTypeTag[RS]} -> ${weakTypeTag[O]}):\n $block")
+    //println(s"unbindAll(${weakTypeTag[RS]} -> ${weakTypeTag[O]}):\n $block")
     block
   }
 
@@ -605,7 +605,7 @@ private trait BinderImplementation {
     }
   }
 
-  protected def parameterLiteral(symbol: c.Symbol, converter: Option[Converter]): Literal = {
+  protected def identToFieldName(symbol: c.Symbol, converter: Option[Converter]): Literal = {
     Literal(Constant(
       converter.map {
         _.convert(symbol.name.decoded)
