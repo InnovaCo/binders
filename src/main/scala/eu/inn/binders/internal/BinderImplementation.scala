@@ -126,31 +126,8 @@ private trait BinderImplementation {
       case NoSymbol => unbindPrimitive[R, O]
       case s => unbindCaseClass[R,O](partial, originalValue)
     }
-    //println(s"unbind(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
+    // println(s"unbind(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
     block
-  }
-
-  def convertIterator(ct: Type, iteratorTree: Tree): Tree = {
-    val selector: Option[String] =
-    if (ct <:< typeOf[Vector[_]]) {
-      Some("toVector")
-    }else
-    if (ct <:< typeOf[List[_]]) {
-      Some("toList")
-    }else
-    if (ct <:< typeOf[IndexedSeq[_]]) {
-      Some("toIndexedSeq")
-    }else
-    if (ct <:< typeOf[Seq[_]]) {
-      Some("toSeq")
-    }
-    else
-      None
-    selector.map { s =>
-      Select(iteratorTree, newTermName(s))
-    } getOrElse {
-      iteratorTree
-    }
   }
 
   def unbindPrimitive[R: c.WeakTypeTag, O: c.WeakTypeTag]: c.Tree = {
@@ -175,7 +152,7 @@ private trait BinderImplementation {
               tpe,
               TypeApply(
                 Select(Ident(deserializerTerm), newTermName("unbindAll")),
-                List(TypeTree(extractTypeArgs(tpe).head))
+                List(extractTypeArgs(tpe).head)
               )
             )
           )
@@ -193,7 +170,7 @@ private trait BinderImplementation {
         )
       }
 
-    //println(s"unbindPrimitive(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
+    // println(s"unbindPrimitive(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
     block
   }
 
@@ -212,41 +189,43 @@ private trait BinderImplementation {
       caseClassParams.map {
         parameter =>
           val getter = findGetter(getters, parameter.typeSignature)
+          val pname = parameterLiteral(parameter, converter)
           val apply = if (getter._1.isDefined) {
-            makeSetterGetterCall(dsrlzTerm, getter._1.get, getter._2, List(parameterLiteral(parameter, converter)))
+            makeSetterGetterCall(dsrlzTerm, getter._1.get, getter._2, List(pname))
           }
           else {
             val innerDslrz = findGetter(getters, weakTypeOf[Option[R]])
+            val getc = makeSetterGetterCall(dsrlzTerm, innerDslrz._1.get, innerDslrz._2, List(pname))
             // println("retn = " + parameter.typeSignature)
-            if (innerDslrz._1.isDefined && parameter.typeSignature <:< typeOf[Option[_]]) {
-              val elemTerm = newTermName(c.fresh("$elem"))
-              val getc = makeSetterGetterCall(dsrlzTerm, innerDslrz._1.get, innerDslrz._2, List(parameterLiteral(parameter, converter)))
+            if (innerDslrz._1.isDefined) {
+              if (parameter.typeSignature <:< typeOf[Option[_]]) {
+                val elemTerm = newTermName(c.fresh("$elem"))
 
-              val typeArgs = parameter.typeSignature match {
-                case TypeRef(_, _, args) => args.map(x ⇒ TypeTree(x))
-                case _ ⇒
-                  c.abort(c.enclosingPosition, s"Can't extract typeArgs from $parameter: ${parameter.typeSignature}")
+                //val typeArgs = extractTypeArgs(parameter.typeSignature) // todo: ?
+
+                val unbindCall = Function(
+                  List(ValDef(Modifiers(Flag.PARAM), elemTerm, TypeTree(), EmptyTree)),
+                  TypeApply(Select(Ident(elemTerm), newTermName("unbind")), List(TypeTree(parameter.typeSignature)))
+                )
+
+                val mapCall = Apply(Select(getc, newTermName("map")), List(unbindCall))
+                // println("call = " + mapCall)
+                mapCall
               }
+              else {
+                val getWithCheck = Apply(
+                  Select(Ident(typeOf[eu.inn.binders.internal.Helpers.type].termSymbol),
+                  newTermName("getFieldOrThrow")), List(getc, pname)
+                )
 
-              val unbindCall = Function(
-                List(ValDef(Modifiers(Flag.PARAM), elemTerm, TypeTree(), EmptyTree)),
-                TypeApply(Select(Ident(elemTerm), newTermName("unbind")), typeArgs)
-              )
-
-              // map iterator
-              val mapCall = Apply(Select(getc, newTermName("map")), List(unbindCall))
-              // println("call = " + mapCall)
-              mapCall
-            }
-            else {
-              val innerDslrz = findGetter(getters, weakTypeOf[R])
-              if (innerDslrz._1.isDefined) {
-                val getc = makeSetterGetterCall(dsrlzTerm, innerDslrz._1.get, innerDslrz._2, List(parameterLiteral(parameter, converter)))
-                TypeApply(Select(getc, newTermName("unbind")), List(TypeTree(parameter.typeSignature)))
+                TypeApply(
+                  Select(getWithCheck, newTermName("unbind")),
+                  List(TypeTree(parameter.typeSignature))
+                )
               }
-              else
-                c.abort(c.enclosingPosition, s"No getter function found for parameter $parameter: ${parameter.typeSignature}")
             }
+            else
+              c.abort(c.enclosingPosition, s"No getter function found for parameter $parameter: ${parameter.typeSignature}")
           }
 
         if (partial) {
@@ -284,7 +263,7 @@ private trait BinderImplementation {
       List(ValDef(Modifiers(), objResultTerm, TypeTree(), applyCall)),
       Ident(objResultTerm))
 
-    //println(s"unbindCaseClass(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
+    // println(s"unbindCaseClass(${weakTypeTag[R]} -> ${weakTypeTag[O]}):\n $block")
     block
   }
 
@@ -335,7 +314,7 @@ private trait BinderImplementation {
 
     val unbindCall = Function(
       List(ValDef(Modifiers(Flag.PARAM), elemTerm, TypeTree(), EmptyTree)),
-      TypeApply(Select(Ident(elemTerm), newTermName("unbind")), List(Ident(weakTypeOf[O].typeSymbol)))
+      TypeApply(Select(Ident(elemTerm), newTermName("unbind")), List(TypeTree(weakTypeOf[O])))
     )
 
     // map iterator
@@ -349,20 +328,42 @@ private trait BinderImplementation {
     )
 
     val block = Block(vals, Ident(objResultTerm))
-    //println(s"unbindAll(${weakTypeTag[RS]} -> ${weakTypeTag[O]}):\n $block")
+    // println(s"unbindAll(${weakTypeTag[RS]} -> ${weakTypeTag[O]}):\n $block")
     block
   }
 
-  private def extractTypeArgs(tpe: Type) = {
-    tpe match {
-      case TypeRef(tpe, sym, args) => {
-        args
+  protected def convertIterator(ct: Type, iteratorTree: Tree): Tree = {
+    val selector: Option[String] =
+      if (ct <:< typeOf[Vector[_]]) {
+        Some("toVector")
+      }else
+      if (ct <:< typeOf[List[_]]) {
+        Some("toList")
+      }else
+      if (ct <:< typeOf[IndexedSeq[_]]) {
+        Some("toIndexedSeq")
+      }else
+      if (ct <:< typeOf[Seq[_]]) {
+        Some("toSeq")
       }
+      else
+        None
+    selector.map { s =>
+      Select(iteratorTree, newTermName(s))
+    } getOrElse {
+      iteratorTree
     }
   }
 
+  protected def extractTypeArgs(tpe: Type): List[TypeTree] = {
+    tpe match {
+      case TypeRef(_, _, args) => args.map(TypeTree(_))
+      case _ =>
+        c.abort(c.enclosingPosition, s"Can't extract typeArgs from $tpe")
+    }
+  }
 
-  private def applyTypeArgs(select: Select, srcTypeArgs: Map[Symbol, Type], dstTypeParams: List[Symbol]) = {
+  protected def applyTypeArgs(select: Select, srcTypeArgs: Map[Symbol, Type], dstTypeParams: List[Symbol]) = {
     // println("typeArgs == " + srcTypeArgs + " dstTypes == " + dstTypeParams)
     if (srcTypeArgs.isEmpty || dstTypeParams.isEmpty)
       select
@@ -379,7 +380,7 @@ private trait BinderImplementation {
 
   }
 
-  private def makeSetterGetterCall(elemTerm: TermName, method: MethodSymbol, methodTypeArgs: Map[Symbol, Type], parameters: List[Tree]): Apply = {
+  protected def makeSetterGetterCall(elemTerm: TermName, method: MethodSymbol, methodTypeArgs: Map[Symbol, Type], parameters: List[Tree]): Apply = {
     val inner = Apply(applyTypeArgs(Select(Ident(elemTerm), method), methodTypeArgs, method.typeParams), parameters)
     if (method.paramss.isEmpty)
       inner
@@ -396,7 +397,7 @@ private trait BinderImplementation {
       }
   }
 
-  private def mostMatching(methods: List[MethodSymbol], scoreFun: MethodSymbol => Option[(Int, Map[Symbol, Type])]): (Option[MethodSymbol], Map[Symbol, Type]) = {
+  protected def mostMatching(methods: List[MethodSymbol], scoreFun: MethodSymbol => Option[(Int, Map[Symbol, Type])]): (Option[MethodSymbol], Map[Symbol, Type]) = {
     var rMax: Int = 0
     var mRes: Option[MethodSymbol] = None
     var mTypeArgs: Map[Symbol, Type] = Map()
@@ -415,14 +416,14 @@ private trait BinderImplementation {
     (mRes, mTypeArgs)
   }
 
-  private def findAdder(adders: List[MethodSymbol], parSymType: Type): (Option[MethodSymbol], Map[Symbol, Type]) = {
+  protected def findAdder(adders: List[MethodSymbol], parSymType: Type): (Option[MethodSymbol], Map[Symbol, Type]) = {
     mostMatching(adders, m => {
       val valuePar = m.paramss.head(0) // parSym 0 - value
       Some(compareTypes(parSymType, valuePar.typeSignature))
     })
   }
 
-  private def findSetter(setters: List[MethodSymbol], parSymType: Type): (Option[MethodSymbol], Map[Symbol, Type]) = {
+  protected def findSetter(setters: List[MethodSymbol], parSymType: Type): (Option[MethodSymbol], Map[Symbol, Type]) = {
     mostMatching(setters, m => {
       val namePar = m.paramss.head(0)    // parSym 0 - name
       val valuePar = m.paramss.head(1)   // parSym 1 - value
@@ -433,7 +434,7 @@ private trait BinderImplementation {
     })
   }
 
-  private def compareTypes(left: Type, right: Type): (Int, Map[Symbol, Type]) = {
+  protected def compareTypes(left: Type, right: Type): (Int, Map[Symbol, Type]) = {
     if (left =:= right)
       (100, Map())
     else
@@ -493,7 +494,7 @@ private trait BinderImplementation {
     }
   }
 
-  private def extractAdders[T: c.WeakTypeTag]: List[MethodSymbol] = {
+  protected def extractAdders[T: c.WeakTypeTag]: List[MethodSymbol] = {
     weakTypeOf[T].members.filter(member => member.isMethod &&
       member.name.decoded.startsWith("add") &&
       member.isPublic && {
@@ -505,7 +506,7 @@ private trait BinderImplementation {
     ).map(_.asInstanceOf[MethodSymbol]).toList
   }
 
-  private def extractSetters[T: c.WeakTypeTag]: List[MethodSymbol] = {
+  protected def extractSetters[T: c.WeakTypeTag]: List[MethodSymbol] = {
     weakTypeOf[T].members.filter(member => member.isMethod &&
       member.name.decoded.startsWith("set") &&
       member.isPublic && {
@@ -518,7 +519,7 @@ private trait BinderImplementation {
     ).map(_.asInstanceOf[MethodSymbol]).toList
   }
 
-  private def findGetter(getters: List[MethodSymbol], returnType: Type): (Option[MethodSymbol], Map[Symbol, Type]) = {
+  protected def findGetter(getters: List[MethodSymbol], returnType: Type): (Option[MethodSymbol], Map[Symbol, Type]) = {
     mostMatching(getters, m => {
       Some(compareTypes(returnType, m.returnType))
     })
@@ -539,7 +540,7 @@ private trait BinderImplementation {
     ).map(_.asInstanceOf[MethodSymbol]).toList
   }
 
-  private def extractCasters[T: c.WeakTypeTag]: List[MethodSymbol] = {
+  protected def extractCasters[T: c.WeakTypeTag]: List[MethodSymbol] = {
 
     weakTypeOf[T].members.filter(member => member.isMethod &&
       member.name.decoded.startsWith("getAs") &&
@@ -551,9 +552,9 @@ private trait BinderImplementation {
     ).map(_.asInstanceOf[MethodSymbol]).toList
   }
 
-  private def allImplicits(symbols: List[List[Symbol]]): Boolean = symbols.flatten.filter(!_.isImplicit).isEmpty
+  protected def allImplicits(symbols: List[List[Symbol]]): Boolean = symbols.flatten.filter(!_.isImplicit).isEmpty
 
-  private def extractCaseClassParams[T: c.WeakTypeTag]: List[c.Symbol] = {
+  protected def extractCaseClassParams[T: c.WeakTypeTag]: List[c.Symbol] = {
 
     val companioned = weakTypeOf[T].typeSymbol
     val companionSymbol = companioned.companionSymbol
@@ -604,7 +605,7 @@ private trait BinderImplementation {
     }
   }
 
-  private def parameterLiteral(symbol: c.Symbol, converter: Option[Converter]): Literal = {
+  protected def parameterLiteral(symbol: c.Symbol, converter: Option[Converter]): Literal = {
     Literal(Constant(
       converter.map {
         _.convert(symbol.name.decoded)
@@ -614,7 +615,7 @@ private trait BinderImplementation {
     ))
   }
 
-  private def findConverter[T: c.WeakTypeTag]: Option[Converter] = {
+  protected def findConverter[T: c.WeakTypeTag]: Option[Converter] = {
     val tpe = weakTypeOf[T]
     val converterTypeName = newTypeName("nameConverterType")
 
