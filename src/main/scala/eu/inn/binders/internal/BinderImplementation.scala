@@ -12,22 +12,21 @@ private trait BinderImplementation {
 
   def bind[S: c.WeakTypeTag, O: c.WeakTypeTag](value: c.Tree): c.Tree = {
     val adders = extractAdders[S]
-    //println(adders)
+    //println(s"adders = $adders")
     val tpe = weakTypeOf[O]
     val adder = findAdder(adders, tpe)
 
     val block =
     if (!adder.isDefined) {
       if (tpe <:< typeOf[Product]){
-        // println(s"Adder is not defined for $tpe binding as product")
-        findAdder(adders, tpe/*, true*/)
+        //println(s"Adder is not defined for $tpe binding as product")
         bindProduct[S, O](value, partial = false)
       }
       else
         c.abort(c.enclosingPosition, s"No adder function found for parameter with type $tpe")
     }
     else {
-      // println ("wholeParamSetter = " + wholeParamSetter)
+      //println ("adder = " + adder)
       def getterCall(serializer: Tree) =
         makeSetterGetterCall(serializer, adder.get, List(value))
 
@@ -377,16 +376,9 @@ private trait BinderImplementation {
   protected def findAdder(adders: List[MethodSymbol], valueType: Type/*, print: Boolean = false*/): Option[(MethodSymbol, Map[Symbol, Type])] = {
     mostMatching(adders, m => {
       val adderType = m.paramss.head(0) // parSym 0 - value
-      /*if (print)
-        println(s"comparing if ${adderType.typeSignature} complies to $valueType...")*/
+      //println(s"comparing if ${adderType.typeSignature} complies to $valueType...")
 
-      //c.typecheck(TypeTree(adderType.typeSignature))
-      //c.typecheck(TypeTree(valueType))
-
-      val cx = Some(compareTypes(valueType, adderType.typeSignature/*, print*/))
-      /*if (print)
-        println(s"comparing if ${adderType.typeSignature} complies to $valueType: $cx")*/
-      cx
+      Some(compareTypes(valueType, adderType.typeSignature/*, print*/))
     })
   }
 
@@ -401,7 +393,11 @@ private trait BinderImplementation {
     })
   }
 
-  protected def compareTypes(left: Type, right: Type/*, print: Boolean = false*/): (Int, Map[Symbol, Type]) = {
+  //protected def printType(n:String, t: Type): Unit = {
+  //  println(s" $n -----\n ${t.erasure} / ${t.etaExpand} / ${t.finalResultType} / ${t.resultType} / ${t.termSymbol} / ${t.typeSymbol} / ${t.dealias} / ${t.typeConstructor}")
+  //}
+
+  protected def compareTypes(left: Type, right: Type): (Int, Map[Symbol, Type]) = {
     if (left =:= right)
       (100, Map())
     else
@@ -411,20 +407,22 @@ private trait BinderImplementation {
     if (left weak_<:< right)
       (80, Map())
     else {
-//      if (print)
-//        println("left = " + left + " " + left.getClass + " right = " + right + " " + right.getClass)
+      //println("left = " + left + " " + left.getClass + " right = " + right + " " + right.getClass)
+      //printType("LEFT", left)
+      //printType("RIGHT", right)
 
       left match {
-        case TypeRef(leftTpe, leftSym, leftArgs) => {
+        case TypeRef(_, _, leftArgs) => {
           right match {
             case TypeRef(rightTpe, rightSym, rightArgs) => {
               val typeMap = collection.mutable.Map[Symbol, Type]()
 
+              //println(s"lt = ${leftTpe.baseClasses} rt = ${rightTpe.baseClasses}")
               var r =
-                if (leftSym.typeSignature =:= rightSym.typeSignature) // Outer type is matched fully
+                if (left.typeSymbol.typeSignature =:= right.typeSymbol.typeSignature) // Outer type is matched fully
                   50
                 else
-                if (leftSym.typeSignature <:< rightSym.typeSignature) // Outer type inherits
+                if (left.typeSymbol.typeSignature <:< right.typeSymbol.typeSignature) // Outer type inherits
                   30
                 else
                 if (rightTpe == NoPrefix) {
@@ -435,13 +433,11 @@ private trait BinderImplementation {
                 else
                   0
 
-//              if (print)
-//                println("leftSym = " + leftTpe + " | " + leftSym + " | " + leftArgs + " right = " + rightTpe + " | " + rightSym + " | " + rightArgs + " r = " + r)
+              // println("leftSym = " + leftTpe + " | " + leftSym + " | " + leftArgs + " right = " + rightTpe + " | " + rightSym + " | " + rightArgs + " r = " + r)
 
               if (r > 0) {
                 // now check generic type args
-//                if (print)
-//                  println("Checking generic type args of : " + left + "("+leftTpe+") " + right + "("+rightTpe+") r = " + r)
+                // println("Checking generic type args of : " + left + "("+leftTpe+") " + right + "("+rightTpe+") r = " + r)
                 if (leftArgs.size == rightArgs.size) {
                   for (i <- 0 until leftArgs.size) {
                     val lefT = leftArgs(i)

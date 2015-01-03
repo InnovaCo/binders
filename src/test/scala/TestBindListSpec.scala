@@ -6,7 +6,7 @@ import eu.inn.binders._
 
 class TestBindListSpec extends FlatSpec with Matchers {
 
-  "Case class with List[T] and Set[T] " should " be bound to statement by names " in {
+  "Case class with List[T] and Set[T] " should " be bound" in {
     val m = mock[TestSerializer[PlainConverter]]
     val list: List[Int] = List(123456, 7890)
     val set: Set[String] = Set("aaa", "bbb")
@@ -15,6 +15,12 @@ class TestBindListSpec extends FlatSpec with Matchers {
     verify(m).addList(List(123456, 7890))
     verify(m).addSet(Set("aaa", "bbb"))
     verify(m).addMap(Map(1l -> "a", 2l -> "b"))
+  }
+
+  "List of integers without explicit type " should " be bound" in {
+    val m = mock[TestSerializer[PlainConverter]]
+    m.bindArgs(List(123456, 7890))
+    verify(m).addList(List(123456, 7890))
   }
 
   "Case class with List[T] and Set[T] " should " be deserialized" in {
