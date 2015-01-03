@@ -2,6 +2,9 @@ import eu.inn.binders.core.{Serializer, Deserializer}
 import eu.inn.binders.naming.Converter
 import java.util.Date
 
+import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
+
 trait TestDeserializer[C <: Converter] extends Deserializer[C] {
   //type nameConverterType = C
 
@@ -39,38 +42,27 @@ trait TestSerializer[C <: Converter] extends Serializer[C] {
 
   def addIntNullable(value: Option[Int])
 
-  def setInt(name: String, value: Int)
-
-  def setIntNullable(name: String, value: Option[Int])
-
   def addDate(value: Date)
 
   def addDateNullable(value: Option[Date])
 
-  def setDate(name: String, value: Date)
-
-  def setDateNullable(name: String, value: Option[Date])
-
-  def addList[T](value: List[T])
-
-  def setList[T](name: String, value: List[T])
+  def addList[T: ClassTag](value: List[T])
 
   def addSet[T](value: Set[T])
 
-  def setSet[T](name: String, value: Set[T])
+  def addMap[K, V](value: Map[K, V])
 
-  def setMap[K, V](name: String, value: Map[K, V])
+  def addMapNullable[K, V](value: Option[Map[K, V]])
 
-  def setGenericMap[K, V](name: String, value: Option[Map[K, V]])
+  def getFieldSerializer(fieldName: String): Option[TestSerializer[C]] = ???
 }
 
-case class TestInt(intValue1: Int, nullableValue: Option[Int], intValue2: Int)
+case class TestProduct(intValue1: Int, nullableValue: Option[Int], intValue2: Int)
 
-case class TestDate(dateValue1: Date, nullableValue: Option[Date], dateValue2: Date)
+case class TestInnerProduct(inner: TestProduct, nullableInner: Option[TestProduct], nullableInner1: Option[TestProduct])
 
 case class TestCollections(intLst: List[Int], strSet: Set[String], longStrMap: Map[Long, String])
 
 case class TestGenericCollections(genericMap: Option[Map[String, Set[Int]]], genericMapNone: Option[Map[String, Set[Int]]])
 
 //case class TestInnerClass(inner: TestInt/*, nulableInner: Option[TestInt], nulableInner1: Option[TestInt]*/)
-case class TestInnerClass(inner: TestInt, nullableInner: Option[TestInt], nullableInner1: Option[TestInt])

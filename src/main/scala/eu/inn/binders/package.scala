@@ -8,13 +8,11 @@ package object binders {
   import language.experimental.macros
 
   implicit class SerializerOps[S <: Serializer[_]](val serializer: S) {
-    def bindNext[O](value: O) = macro BinderProxy.bindNext[S, O]
-
     def bind[O](value: O) = macro BinderProxy.bind[S, O]
 
-    def bindPartial[O](value: O) = macro BinderProxy.bindPartial[S, O]
-
     def bindArgs(t: Any*) = macro BinderProxy.bindArgs
+
+    def bindPartial[O <: Product](value: O) = macro BinderProxy.bindPartial[S, O]
   }
 
   implicit class DeserializerOps[R <: Deserializer[_]](val deserializer: R) {

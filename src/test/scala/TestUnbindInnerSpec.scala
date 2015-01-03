@@ -27,9 +27,9 @@ class TestUnbindInnerSpec extends FlatSpec with Matchers {
 
     //when(mo.getNullableFieldDeserializer(anyString)).thenReturn(None)
 
-    val t = mo.unbind[TestInnerClass]
+    val t = mo.unbind[TestInnerProduct]
     //assert(t === TestInnerClass(TestInt(123456, Some(555), 789)))
-    assert(t === TestInnerClass(TestInt(123456, Some(555), 789), None, Some(TestInt(1,None,3))))
+    assert(t === TestInnerProduct(TestProduct(123456, Some(555), 789), None, Some(TestProduct(1,None,3))))
   }
 
   "case class inner class " should " throw FieldNotFound for absent field" in {
@@ -53,7 +53,7 @@ class TestUnbindInnerSpec extends FlatSpec with Matchers {
     //when(mo.getNullableFieldDeserializer(anyString)).thenReturn(None)
 
     intercept[FieldNotFoundException] {
-      val t = mo.unbind[TestInnerClass]
+      val t = mo.unbind[TestInnerProduct]
     }
   }
 }

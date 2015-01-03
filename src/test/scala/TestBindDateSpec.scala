@@ -13,34 +13,14 @@ class TestBindDateSpec extends FlatSpec with Matchers {
     (cal.getTime(), new Date())
   }
 
-  "case class fields with java.util.Date " should " be bound to statement by names " in {
-    val m = mock[TestSerializer[PlainConverter]]
-    m.bind(TestDate(yesterday, Some(yesterday), now))
-    verify(m).setDate("dateValue1", yesterday)
-    verify(m).setDateNullable("nullableValue", Some(yesterday))
-    verify(m).setDate("dateValue2", now)
-    verifyNoMoreInteractions(m)
-  }
-
   "all java.util.Date parameters " should " be bound to statement by indexes " in {
     val m = mock[TestSerializer[PlainConverter]]
-    m.bindNext(yesterday)
-    m.bindNext(Some(yesterday))
-    m.bindNext(now)
+    m.bind(yesterday)
+    m.bind(Some(yesterday))
+    m.bind(now)
     verify(m).addDate(yesterday)
     verify(m).addDateNullable(Some(yesterday))
     verify(m).addDate(now)
     verifyNoMoreInteractions(m)
-  }
-
-  "some case class fields with java.util.Date " should " be bound to statement by names " in {
-    val m = mock[TestSerializer[PlainConverter]]
-    when(m.hasField("dateValue1")).thenReturn(true)
-    when(m.hasField("nullableValue")).thenReturn(true)
-    when(m.hasField("dateValue2")).thenReturn(false)
-    m.bindPartial(TestDate(yesterday, Some(yesterday), now))
-    verify(m).setDate("dateValue1", yesterday)
-    verify(m).setDateNullable("nullableValue", Some(yesterday))
-    verify(m, times(0)).setDate("dateValue2", now)
   }
 }

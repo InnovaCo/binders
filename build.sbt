@@ -8,7 +8,7 @@ organization := "eu.inn"
 
 scalaVersion := "2.11.4"
 
-crossScalaVersions := Seq("2.11.4", "2.10.4")
+// crossScalaVersions := Seq("2.11.4", "2.10.4")
 
 resolvers ++= Seq("Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/")
 
