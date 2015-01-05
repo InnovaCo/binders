@@ -6,8 +6,6 @@ import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 trait TestDeserializer[C <: Converter] extends Deserializer[C] {
-  //type nameConverterType = C
-
   def getInt(): Int
 
   def getIntNullable(): Option[Int]
@@ -17,33 +15,9 @@ trait TestDeserializer[C <: Converter] extends Deserializer[C] {
   def getDateNullable(): Option[Date]
 
   def iterator(): Iterator[TestDeserializer[C]]
-
-  /*
-
-
-
-  def getList[T](name: String): List[T]
-
-  def getSet[T](name: String): Set[T]
-
-  def getMap[K, V](name: String): Map[K, V]
-
-  def getGenericMap[K, V](name: String): Option[Map[K, V]]
-
-  def hasField(fieldName: String): Boolean = ???
-
-  def iterator(): Iterator[TestDeserializer[C]] = ???
-
-  def getAsInt: Int = ???
-
-  def getFieldDeserializer(fieldName: String): TestDeserializer[C] = ???
-
-  def getNullableFieldDeserializer(fieldName: String): Option[TestDeserializer[C]] = ???*/
 }
 
 trait TestSerializer[C <: Converter] extends Serializer[C] {
-  //type nameConverterType = C
-
   def addInt(value: Int)
 
   def addIntNullable(value: Option[Int])
@@ -70,5 +44,3 @@ case class TestInnerProduct(inner: TestProduct, nullableInner: Option[TestProduc
 case class TestCollections(intLst: List[Int], strSet: Set[String], longStrMap: Map[Long, String])
 
 case class TestGenericCollections(genericMap: Option[Map[String, Set[Int]]], genericMapNone: Option[Map[String, Set[Int]]])
-
-//case class TestInnerClass(inner: TestInt/*, nulableInner: Option[TestInt], nulableInner1: Option[TestInt]*/)
