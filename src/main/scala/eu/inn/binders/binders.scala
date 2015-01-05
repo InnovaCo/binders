@@ -19,9 +19,5 @@ package object binders {
     def unbind[O]: O = macro BinderProxy.unbind[D, O]
 
     def unbindPartial[O](originalValue: O): O = macro BinderProxy.unbindPartial[D, O]
-/*
-    def unbindOne[O]: Option[O] = macro BinderProxy.unbindOne[R, O]
-
-    def unbindAll[O]: Iterator[O] = macro BinderProxy.unbindAll[R, O]*/
   }
 }

@@ -58,24 +58,4 @@ object BinderProxy {
     } with BinderImplementation
     c.Expr[O](bundle.unbind[D, O](true, originalValue.tree))
   }
-
-  def unbindOne[RS: c.WeakTypeTag, O: c.WeakTypeTag]
-  (c: Context): c.Expr[O] = {
-
-    val c0: c.type = c
-    val bundle = new {
-      val c: c0.type = c0
-    } with BinderImplementation
-    c.Expr[O](bundle.unbindOne[RS, O])
-  }
-
-  def unbindAll[RS: c.WeakTypeTag, O: c.WeakTypeTag]
-  (c: Context): c.Expr[O] = {
-
-    val c0: c.type = c
-    val bundle = new {
-      val c: c0.type = c0
-    } with BinderImplementation
-    c.Expr[O](bundle.unbindAll[RS, O])
-  }
 }
