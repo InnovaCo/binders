@@ -5,7 +5,7 @@ import org.scalatest.mock.MockitoSugar.mock
 import org.scalatest.{FlatSpec, Matchers}
 
 class TestBindIntSpec extends FlatSpec with Matchers {
-  "all int parameters " should " be bound to statement by indexes " in {
+  "all int parameters " should " bind" in {
     val m = mock[TestSerializer[PlainConverter]]
     val i1 = 123456
     val i2 = Some(555)
@@ -19,7 +19,7 @@ class TestBindIntSpec extends FlatSpec with Matchers {
     verifyNoMoreInteractions(m)
   }
 
-  "all int parameters " should " be bound to statement as args by indexes " in {
+  "all int parameters " should " bind as args" in {
     val m = mock[TestSerializer[PlainConverter]]
     val i1 = 123456
     val i2 = Some(555)
@@ -29,5 +29,16 @@ class TestBindIntSpec extends FlatSpec with Matchers {
     verify(m).addIntNullable(Some(555))
     verify(m).addInt(7890)
     verifyNoMoreInteractions(m)
+  }
+
+  "all int parameters " should " unbind" in {
+    val m = mock[TestDeserializer[PlainConverter]]
+    when(m.getInt).thenReturn(123456)
+    when(m.getIntNullable).thenReturn(Some(555))
+
+    val i1 = m.unbind[Int]
+    val i2 = m.unbind[Option[Int]]
+    assert (i1 === 123456)
+    assert (i2 === Some(555))
   }
 }

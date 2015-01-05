@@ -8,13 +8,19 @@ import scala.reflect.runtime.universe._
 trait TestDeserializer[C <: Converter] extends Deserializer[C] {
   //type nameConverterType = C
 
-  def getInt(name: String): Int
+  def getInt(): Int
 
-  def getIntNullable(name: String): Option[Int]
+  def getIntNullable(): Option[Int]
 
-  def getDate(name: String): Date
+  def getDate(): Date
 
-  def getDateNullable(name: String): Option[Date]
+  def getDateNullable(): Option[Date]
+
+  def iterator(): Iterator[TestDeserializer[C]]
+
+  /*
+
+
 
   def getList[T](name: String): List[T]
 
@@ -32,7 +38,7 @@ trait TestDeserializer[C <: Converter] extends Deserializer[C] {
 
   def getFieldDeserializer(fieldName: String): TestDeserializer[C] = ???
 
-  def getNullableFieldDeserializer(fieldName: String): Option[TestDeserializer[C]] = ???
+  def getNullableFieldDeserializer(fieldName: String): Option[TestDeserializer[C]] = ???*/
 }
 
 trait TestSerializer[C <: Converter] extends Serializer[C] {

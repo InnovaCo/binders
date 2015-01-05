@@ -5,5 +5,5 @@ import eu.inn.binders.naming.Converter
 trait Serializer[C <: Converter] {
   type nameConverterType = C
   // def hasField(fieldName: String): Boolean
-  // def getFieldSerializer(fieldName: String): Option[Serializer[C]]
+  // def getFieldSerializer(fieldName: String): Serializer[C]
 }

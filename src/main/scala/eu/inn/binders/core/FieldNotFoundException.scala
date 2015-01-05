@@ -1,3 +1,3 @@
 package eu.inn.binders.core
 
-class FieldNotFoundException(val fieldName: String) extends RuntimeException(s"Field $fieldName wasn't found")
+class FieldNotFoundException(val fieldName: String) extends BindersException(s"Field $fieldName wasn't found")

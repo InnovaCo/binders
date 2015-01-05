@@ -15,13 +15,13 @@ package object binders {
     def bindPartial[O <: Product](value: O) = macro BinderProxy.bindPartial[S, O]
   }
 
-  implicit class DeserializerOps[R <: Deserializer[_]](val deserializer: R) {
-    def unbind[O]: O = macro BinderProxy.unbind[R, O]
+  implicit class DeserializerOps[D <: Deserializer[_]](val deserializer: D) {
+    def unbind[O]: O = macro BinderProxy.unbind[D, O]
 
-    def unbindPartial[O](originalValue: O): O = macro BinderProxy.unbindPartial[R, O]
-
+    def unbindPartial[O](originalValue: O): O = macro BinderProxy.unbindPartial[D, O]
+/*
     def unbindOne[O]: Option[O] = macro BinderProxy.unbindOne[R, O]
 
-    def unbindAll[O]: Iterator[O] = macro BinderProxy.unbindAll[R, O]
+    def unbindAll[O]: Iterator[O] = macro BinderProxy.unbindAll[R, O]*/
   }
 }

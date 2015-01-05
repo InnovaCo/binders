@@ -4,7 +4,7 @@ import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar.mock
 import org.scalatest.{FlatSpec, Matchers}
 
-class TestBindProductSpec extends FlatSpec with Matchers {
+class TestProductSpec extends FlatSpec with Matchers {
 
   "all case class fields " should " be serialized by names " in {
     val m = mock[TestSerializer[PlainConverter]]
@@ -78,5 +78,67 @@ class TestBindProductSpec extends FlatSpec with Matchers {
     verify(m).getFieldSerializer("intValue2")
 
     verifyNoMoreInteractions(m)
+  }
+
+  "all case class fields " should " be deserialized by names " in {
+    val m = mock[TestDeserializer[PlainConverter]]
+
+    val m1 = mock[TestDeserializer[PlainConverter]]
+    when(m1.fieldName).thenReturn(Some("intValue1"))
+    when(m1.getInt()).thenReturn(123456)
+
+    val m2 = mock[TestDeserializer[PlainConverter]]
+    when(m2.fieldName).thenReturn(Some("nullableValue"))
+    when(m2.getIntNullable()).thenReturn(Some(555))
+
+    val m3 = mock[TestDeserializer[PlainConverter]]
+    when(m3.fieldName).thenReturn(Some("intValue2"))
+    when(m3.getInt()).thenReturn(7890)
+
+    val mi = List(m1,m2,m3)
+    when(m.iterator()).thenReturn(mi.toIterator)
+
+    val t = m.unbind[TestProduct]
+    assert(t === TestProduct(123456, Some(555), 7890))
+  }
+
+  "all case class fields " should " be deserialized by names with specified convention" in {
+    val m = mock[TestDeserializer[CamelCaseToSnakeCaseConverter]]
+
+    val m1 = mock[TestDeserializer[CamelCaseToSnakeCaseConverter]]
+    when(m1.fieldName).thenReturn(Some("int_value1"))
+    when(m1.getInt()).thenReturn(123456)
+
+    val m2 = mock[TestDeserializer[CamelCaseToSnakeCaseConverter]]
+    when(m2.fieldName).thenReturn(Some("nullable_value"))
+    when(m2.getIntNullable()).thenReturn(Some(555))
+
+    val m3 = mock[TestDeserializer[CamelCaseToSnakeCaseConverter]]
+    when(m3.fieldName).thenReturn(Some("int_value2"))
+    when(m3.getInt()).thenReturn(7890)
+
+    val mi = List(m1,m2,m3)
+    when(m.iterator()).thenReturn(mi.toIterator)
+
+    val t = m.unbind[TestProduct]
+    assert(t === TestProduct(123456, Some(555), 7890))
+  }
+
+  "some case class fields " should " be deserialized by names " in {
+    val m = mock[TestDeserializer[PlainConverter]]
+
+    val m1 = mock[TestDeserializer[PlainConverter]]
+    when(m1.fieldName).thenReturn(Some("intValue1"))
+    when(m1.getInt()).thenReturn(123456)
+
+    val m3 = mock[TestDeserializer[PlainConverter]]
+    when(m3.fieldName).thenReturn(Some("intValue2"))
+    when(m3.getInt()).thenReturn(7890)
+
+    val mi = List(m1,m3)
+    when(m.iterator()).thenReturn(mi.toIterator)
+
+    val t = m.unbindPartial(TestProduct(-1, Some(555), -2))
+    assert(t === TestProduct(123456, Some(555), 7890))
   }
 }
