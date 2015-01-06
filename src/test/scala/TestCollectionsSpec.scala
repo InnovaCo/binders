@@ -13,7 +13,7 @@ class TestCollectionsSpec extends FlatSpec with Matchers {
       l =>
       {
         val mi = mock[TestDeserializer[PlainConverter]]
-        when(mi.getInt()).thenReturn(l)
+        when(mi.readInt()).thenReturn(l)
         mi
       }
     }
@@ -27,15 +27,15 @@ class TestCollectionsSpec extends FlatSpec with Matchers {
     val set: Set[String] = Set("aaa", "bbb")
     val map: Map[Long,String] = Map(1l -> "a", 2l -> "b")
     m.bindArgs(list, set, map)
-    verify(m).addList(List(123456, 7890))
-    verify(m).addSet(Set("aaa", "bbb"))
-    verify(m).addMap(Map(1l -> "a", 2l -> "b"))
+    verify(m).writeList(List(123456, 7890))
+    verify(m).writeSet(Set("aaa", "bbb"))
+    verify(m).writeMap(Map(1l -> "a", 2l -> "b"))
   }
 
   "List of integers without explicit type " should " be bound" in {
     val m = mock[TestSerializer[PlainConverter]]
     m.bindArgs(List(123456, 7890))
-    verify(m).addList(List(123456, 7890))
+    verify(m).writeList(List(123456, 7890))
   }
 
   "Vector of integers " should " unbind" in {
@@ -72,5 +72,12 @@ class TestCollectionsSpec extends FlatSpec with Matchers {
     val m = getMockList
     val l: Iterator[Int] = m.unbind[Iterator[Int]]
     assert (l.toSeq === Seq(123456, 7890))
+  }
+
+  "List of integers " should " unbind directly" in {
+    val m = mock[TestDeserializerWithList[PlainConverter]]
+    when(m.readList[Int]()).thenReturn(List(123456, 7890))
+    val l = m.unbind[List[Int]]
+    assert (l === List(123456, 7890))
   }
 }

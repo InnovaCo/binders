@@ -13,9 +13,9 @@ class TestBindIntSpec extends FlatSpec with Matchers {
     m.bind(i1)
     m.bind(i2)
     m.bind(i3)
-    verify(m).addInt(123456)
-    verify(m).addIntNullable(Some(555))
-    verify(m).addInt(7890)
+    verify(m).writeInt(123456)
+    verify(m).writeIntNullable(Some(555))
+    verify(m).writeInt(7890)
     verifyNoMoreInteractions(m)
   }
 
@@ -25,16 +25,16 @@ class TestBindIntSpec extends FlatSpec with Matchers {
     val i2 = Some(555)
     val i3 = 7890
     m.bindArgs(i1, i2, i3)
-    verify(m).addInt(123456)
-    verify(m).addIntNullable(Some(555))
-    verify(m).addInt(7890)
+    verify(m).writeInt(123456)
+    verify(m).writeIntNullable(Some(555))
+    verify(m).writeInt(7890)
     verifyNoMoreInteractions(m)
   }
 
   "all int parameters " should " unbind" in {
     val m = mock[TestDeserializer[PlainConverter]]
-    when(m.getInt).thenReturn(123456)
-    when(m.getIntNullable).thenReturn(Some(555))
+    when(m.readInt).thenReturn(123456)
+    when(m.readIntNullable).thenReturn(Some(555))
 
     val i1 = m.unbind[Int]
     val i2 = m.unbind[Option[Int]]

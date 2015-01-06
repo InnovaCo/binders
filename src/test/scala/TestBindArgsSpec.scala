@@ -9,8 +9,8 @@ class TestBindArgsSpec extends FlatSpec with Matchers {
     val stmt = mock[TestSerializer[PlainConverter]]
     val noneInt: Option[Int] = None
     stmt.bindArgs(10, Some(3), noneInt)
-    verify(stmt).addInt(10)
-    verify(stmt).addIntNullable(Some(3))
-    verify(stmt).addIntNullable(None)
+    verify(stmt).writeInt(10)
+    verify(stmt).writeIntNullable(Some(3))
+    verify(stmt).writeIntNullable(None)
   }
 }

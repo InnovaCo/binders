@@ -11,24 +11,22 @@ private trait BinderImplementation {
   import c.universe._
 
   def bind[S: c.WeakTypeTag, O: c.WeakTypeTag](value: c.Tree): c.Tree = {
-    val adders = extractAdders[S]
-    //println(s"adders = $adders")
+    val writers = extractWriters[S]
     val tpe = weakTypeOf[O]
-    val adder = findAdder(adders, tpe)
+    val writer = findWriter(writers, tpe)
 
     val block =
-    if (!adder.isDefined) {
+    if (!writer.isDefined) {
       if (tpe <:< typeOf[Product]){
-        //println(s"Adder is not defined for $tpe binding as product")
         bindProduct[S, O](value, partial = false)
       }
       else
-        c.abort(c.enclosingPosition, s"No adder function found for parameter with type $tpe")
+        c.abort(c.enclosingPosition, s"No write function found for parameter with type $tpe")
     }
     else {
       q"""{
         val t = ${c.prefix.tree}
-        ${makeSetterGetterCall(q"t.serializer", adder.get, List(value))}
+        ${makeReaderWriterCall(q"t.serializer", writer.get, List(value))}
         t.serializer
         }"""
     }
@@ -73,14 +71,15 @@ private trait BinderImplementation {
 
   def unbind[D: c.WeakTypeTag, O: c.WeakTypeTag](partial: Boolean, originalValue: c.Tree): c.Tree = {
     val tpe = weakTypeOf[O]
-    val getters = extractGetters[D]
-    val getter = findGetter(getters, tpe)
-
+    val readers = extractReaders[D]
+    //println ("readers: " + readers)
+    val reader = findReader(readers, tpe)
+    //println("reader: " + reader)
     val block =
-      getter.map { g =>
+      reader.map { g =>
         q"""{
           val tu = ${c.prefix.tree}
-          ${makeSetterGetterCall(q"tu.deserializer", g)}
+          ${makeReaderWriterCall(q"tu.deserializer", g)}
         }"""
       } getOrElse {
         val companionType = tpe.typeSymbol.companionSymbol.typeSignature
@@ -90,12 +89,11 @@ private trait BinderImplementation {
               unbindIterable[D,O]
             }
             else {
-              c.abort(c.enclosingPosition, s"No getter function found for $tpe in ${weakTypeOf[D]}")
+              c.abort(c.enclosingPosition, s"No read function found for $tpe in ${weakTypeOf[D]}")
             }
           case s => unbindProduct[D,O](partial, originalValue)
         }
       }
-
     //println(block)
     block
   }
@@ -211,7 +209,7 @@ private trait BinderImplementation {
 
   }
 
-  protected def makeSetterGetterCall(elemTerm: Tree, method: (MethodSymbol, Map[Symbol, Type]), parameters: List[Tree] = List()): Apply = {
+  protected def makeReaderWriterCall(elemTerm: Tree, method: (MethodSymbol, Map[Symbol, Type]), parameters: List[Tree] = List()): Apply = {
     val inner = Apply(applyTypeArgs(Select(elemTerm, method._1),  method._2,  method._1.typeParams), parameters)
     if (method._1.paramss.isEmpty)
       inner
@@ -245,10 +243,10 @@ private trait BinderImplementation {
     mRes
   }
 
-  protected def findAdder(adders: List[MethodSymbol], valueType: Type/*, print: Boolean = false*/): Option[(MethodSymbol, Map[Symbol, Type])] = {
-    mostMatching(adders, m => {
-      val adderType = m.paramss.head(0) // parSym 0 - value
-      Some(compareTypes(valueType, adderType.typeSignature/*, print*/))
+  protected def findWriter(writers: List[MethodSymbol], valueType: Type/*, print: Boolean = false*/): Option[(MethodSymbol, Map[Symbol, Type])] = {
+    mostMatching(writers, m => {
+      val writerType = m.paramss.head(0) // parSym 0 - value
+      Some(compareTypes(valueType, writerType.typeSignature/*, print*/))
     })
   }
 
@@ -312,9 +310,9 @@ private trait BinderImplementation {
     }
   }
 
-  protected def extractAdders[T: c.WeakTypeTag]: List[MethodSymbol] = {
+  protected def extractWriters[T: c.WeakTypeTag]: List[MethodSymbol] = {
     weakTypeOf[T].members.filter(member => member.isMethod &&
-      member.name.decoded.startsWith("add") &&
+      member.name.decoded.startsWith("write") &&
       member.isPublic && {
         val m = member.asInstanceOf[MethodSymbol]
         m.paramss.nonEmpty &&
@@ -324,19 +322,21 @@ private trait BinderImplementation {
     ).map(_.asInstanceOf[MethodSymbol]).toList
   }
 
-  protected def findGetter(getters: List[MethodSymbol], returnType: Type): Option[(MethodSymbol, Map[Symbol, Type])] = {
-    mostMatching(getters, m => {
+  protected def findReader(readers: List[MethodSymbol], returnType: Type): Option[(MethodSymbol, Map[Symbol, Type])] = {
+    mostMatching(readers, m => {
       Some(compareTypes(returnType, m.returnType))
     })
   }
 
-  protected def extractGetters[T: c.WeakTypeTag]: List[MethodSymbol] = {
+  protected def extractReaders[T: c.WeakTypeTag]: List[MethodSymbol] = {
     weakTypeOf[T].members.filter(member => member.isMethod &&
-      member.name.decoded.startsWith("get") &&
+      member.name.decoded.startsWith("read") &&
       member.isPublic && {
         val m = member.asInstanceOf[MethodSymbol]
-        // println(m.paramss)
-        m.paramss.isEmpty || (m.paramss.size == 1 && allImplicits(List(m.paramss.head)))
+        //println("method: " + member.name.decoded + " params: " + m.paramss)
+        m.paramss.isEmpty ||
+          (m.paramss.size == 1 && allImplicits(List(m.paramss.head))) ||
+          (m.paramss.size == 2 && m.paramss.head.isEmpty && allImplicits(m.paramss.tail))
       }
     ).map(_.asInstanceOf[MethodSymbol]).toList
   }

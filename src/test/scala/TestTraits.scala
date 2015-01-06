@@ -6,33 +6,39 @@ import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 trait TestDeserializer[C <: Converter] extends Deserializer[C] {
-  def getInt(): Int
+  def readInt(): Int
 
-  def getIntNullable(): Option[Int]
+  def readIntNullable(): Option[Int]
 
-  def getDate(): Date
+  def readDate(): Date
 
-  def getDateNullable(): Option[Date]
+  def readDateNullable(): Option[Date]
+
+  def iterator(): Iterator[TestDeserializer[C]]
+}
+
+trait TestDeserializerWithList[C <: Converter] extends Deserializer[C] {
+  def readList[T: ClassTag](): List[T] = ???
 
   def iterator(): Iterator[TestDeserializer[C]]
 }
 
 trait TestSerializer[C <: Converter] extends Serializer[C] {
-  def addInt(value: Int)
+  def writeInt(value: Int)
 
-  def addIntNullable(value: Option[Int])
+  def writeIntNullable(value: Option[Int])
 
-  def addDate(value: Date)
+  def writeDate(value: Date)
 
-  def addDateNullable(value: Option[Date])
+  def writeDateNullable(value: Option[Date])
 
-  def addList[T: ClassTag](value: List[T])
+  def writeList[T: ClassTag](value: List[T])
 
-  def addSet[T](value: Set[T])
+  def writeSet[T](value: Set[T])
 
-  def addMap[K, V](value: Map[K, V])
+  def writeMap[K, V](value: Map[K, V])
 
-  def addMapNullable[K, V](value: Option[Map[K, V]])
+  def writeMapNullable[K, V](value: Option[Map[K, V]])
 
   def getFieldSerializer(fieldName: String): Option[TestSerializer[C]] = ???
 }
