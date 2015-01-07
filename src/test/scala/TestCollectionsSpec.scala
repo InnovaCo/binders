@@ -21,21 +21,27 @@ class TestCollectionsSpec extends FlatSpec with Matchers {
     m
   }
 
-  "Case class with List[T] and Set[T] " should " be bound" in {
+  "Map[Int] " should " be bound" in {
     val m = mock[TestSerializer[PlainConverter]]
-    val list: List[Int] = List(123456, 7890)
-    val set: Set[String] = Set("aaa", "bbb")
     val map: Map[Long,String] = Map(1l -> "a", 2l -> "b")
-    m.bindArgs(list, set, map)
-    verify(m).writeList(List(123456, 7890))
-    verify(m).writeSet(Set("aaa", "bbb"))
+    m.bind(map)
     verify(m).writeMap(Map(1l -> "a", 2l -> "b"))
   }
 
-  "List of integers without explicit type " should " be bound" in {
+  "Traversable of integers without explicit type " should " be bound" in {
     val m = mock[TestSerializer[PlainConverter]]
-    m.bindArgs(List(123456, 7890))
-    verify(m).writeList(List(123456, 7890))
+    val t:Traversable[Int] = Seq(123456, 7890).toTraversable
+    m.bind(t)
+    verify(m).beginArray()
+    verify(m).writeInt(123456)
+    verify(m).writeInt(7890)
+    verify(m).endArray()
+  }
+
+  "Seq of integers without explicit type " should " be bound" in {
+    val m = mock[TestSerializer[PlainConverter]]
+    m.bind(Seq(123456, 7890))
+    verify(m).writeSeq(Seq(123456, 7890))
   }
 
   "Vector of integers " should " unbind" in {

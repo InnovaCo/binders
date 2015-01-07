@@ -17,14 +17,15 @@ object BinderProxy {
     c.Expr[Any](bundle.bind[S, O](value.tree))
   }
 
-  def bindArgs(c: Context)
-              (t: c.Expr[Any]*): c.Expr[Any] = {
+  def bindArgs[S: c.WeakTypeTag]
+  (c: Context)
+  (t: c.Expr[Any]*): c.Expr[Any] = {
 
     val c0: c.type = c
     val bundle = new {
       val c: c0.type = c0
     } with BinderImplementation
-    c.Expr[Any](bundle.bindArgs(t.map(_.tree)))
+    c.Expr[Any](bundle.bindArgs[S](t.map(_.tree)))
   }
 
   def bindPartial[S: c.WeakTypeTag, O: c.WeakTypeTag]
@@ -35,7 +36,7 @@ object BinderProxy {
     val bundle = new {
       val c: c0.type = c0
     } with BinderImplementation
-    c.Expr[Any](bundle.bindProduct[S, O](value.tree, true))
+    c.Expr[Any](bundle.bindObject[S, O](value.tree, true))
   }
 
   def unbind[D: c.WeakTypeTag, O: c.WeakTypeTag]

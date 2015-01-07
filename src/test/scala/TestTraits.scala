@@ -3,7 +3,6 @@ import eu.inn.binders.naming.Converter
 import java.util.Date
 
 import scala.reflect.ClassTag
-import scala.reflect.runtime.universe._
 
 trait TestDeserializer[C <: Converter] extends Deserializer[C] {
   def readInt(): Int
@@ -32,15 +31,17 @@ trait TestSerializer[C <: Converter] extends Serializer[C] {
 
   def writeDateNullable(value: Option[Date])
 
-  def writeList[T: ClassTag](value: List[T])
-
-  def writeSet[T](value: Set[T])
+  def writeSeq[T: ClassTag](value: Seq[T])
 
   def writeMap[K, V](value: Map[K, V])
 
   def writeMapNullable[K, V](value: Option[Map[K, V]])
 
-  def getFieldSerializer(fieldName: String): Option[TestSerializer[C]] = ???
+  def getFieldSerializer(fieldName: String): Option[TestSerializer[C]]
+
+  def beginArray()
+
+  def endArray()
 }
 
 case class TestProduct(intValue1: Int, nullableValue: Option[Int], intValue2: Int)

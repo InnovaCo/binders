@@ -18,7 +18,11 @@ private trait BinderImplementation {
     val block =
     if (!writer.isDefined) {
       if (tpe <:< typeOf[Product]){
-        bindProduct[S, O](value, partial = false)
+        bindObject[S, O](value, partial = false)
+      }
+      else
+      if (tpe <:< typeOf[TraversableOnce[_]]){
+        bindTraversable[S, O](value)
       }
       else
         c.abort(c.enclosingPosition, s"No write function found for parameter with type $tpe")
@@ -34,11 +38,13 @@ private trait BinderImplementation {
     block
   }
 
-  def bindArgs(args: Seq[c.Tree]): c.Tree = {
+  def bindArgs[S: c.WeakTypeTag](args: Seq[c.Tree]): c.Tree = {
     val bindList = args.map(arg => q"ta.serializer.bind($arg)")
     val block = q"""{
       val ta = ${c.prefix.tree}
+      ${callIfExists[S](q"ta.serializer", "beginArgs")}
       ..$bindList
+      ${callIfExists[S](q"ta.serializer", "endArgs")}
       ta.serializer
       }"""
 
@@ -46,7 +52,7 @@ private trait BinderImplementation {
     block
   }
 
-  def bindProduct[S: c.WeakTypeTag, O: c.WeakTypeTag](value: c.Tree, partial: Boolean): c.Tree = {
+  def bindObject[S: c.WeakTypeTag, O: c.WeakTypeTag](value: c.Tree, partial: Boolean): c.Tree = {
     val converter = findConverter[S]
     val caseClassParams = extractCaseClassParams[O]
 
@@ -62,10 +68,24 @@ private trait BinderImplementation {
       import eu.inn.binders.internal.Helpers._
       val tx = ${c.prefix.tree}
       val o = $value
+      ${callIfExists[S](q"tx.serializer", "beginObject")}
       ..$listOfCalls
+      ${callIfExists[S](q"tx.serializer", "endObject")}
       tx.serializer
       }"""
     //println(block + " partial = " + partial)
+    block
+  }
+
+  def bindTraversable[S : c.WeakTypeTag, O: c.WeakTypeTag](value: c.Tree): c.Tree = {
+    val block = q"""{
+      val ts = ${c.prefix.tree}
+      val it = $value
+      ${callIfExists[S](q"ts.serializer", "beginArray")}
+      it.foreach(ts.bind(_))
+      ${callIfExists[S](q"ts.serializer", "endArray")}
+    }"""
+    //println(block)
     block
   }
 
@@ -244,6 +264,7 @@ private trait BinderImplementation {
   }
 
   protected def findWriter(writers: List[MethodSymbol], valueType: Type/*, print: Boolean = false*/): Option[(MethodSymbol, Map[Symbol, Type])] = {
+    //println("writers = " + writers)
     mostMatching(writers, m => {
       val writerType = m.paramss.head(0) // parSym 0 - value
       Some(compareTypes(valueType, writerType.typeSignature/*, print*/))
@@ -266,12 +287,12 @@ private trait BinderImplementation {
             case TypeRef(rightTpe, rightSym, rightArgs) => {
               val typeMap = collection.mutable.Map[Symbol, Type]()
 
-              //println(s"lt = ${leftTpe.baseClasses} rt = ${rightTpe.baseClasses}")
+              // println(s"lt = ${left.baseClasses} rt = ${rightTpe.baseClasses}")
               var r =
                 if (left.typeSymbol.typeSignature =:= right.typeSymbol.typeSignature) // Outer type is matched fully
                   50
                 else
-                if (left.typeSymbol.typeSignature <:< right.typeSymbol.typeSignature) // Outer type inherits
+                if (left.baseClasses.exists(_.typeSignature =:= right.typeSymbol.typeSignature)) // Outer type inherits
                   30
                 else
                 if (rightTpe == NoPrefix) {
@@ -282,7 +303,8 @@ private trait BinderImplementation {
                 else
                   0
 
-              // println("leftSym = " + leftTpe + " | " + leftSym + " | " + leftArgs + " right = " + rightTpe + " | " + rightSym + " | " + rightArgs + " r = " + r)
+              //println("LB = " + left.baseClasses)
+              //println("leftSym = " + left + " | " + leftArgs + " right = " + right + " | " + rightArgs + " r = " + r)
 
               if (r > 0) {
                 // now check generic type args
@@ -307,6 +329,23 @@ private trait BinderImplementation {
         }
         case _ => (0, Map())
       }
+    }
+  }
+
+  protected def callIfExists[S: c.WeakTypeTag](o: c.Tree, methodName: String): c.Tree = {
+    weakTypeOf[S].members.filter(member => member.isMethod &&
+      member.name.decoded == methodName &&
+      member.isPublic && {
+      val m = member.asInstanceOf[MethodSymbol]
+      //println("method: " + member.name.decoded + " params: " + m.paramss)
+      m.paramss.isEmpty ||
+        (m.paramss.size == 1 && allImplicits(List(m.paramss.head))) ||
+        (m.paramss.size == 2 && m.paramss.head.isEmpty && allImplicits(m.paramss.tail))
+    }
+    ).map(_.asInstanceOf[MethodSymbol]).headOption.map { m =>
+      q"$o.${newTermName(methodName)}()"
+    } getOrElse {
+      q""
     }
   }
 

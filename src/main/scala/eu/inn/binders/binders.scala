@@ -10,7 +10,7 @@ package object binders {
   implicit class SerializerOps[S <: Serializer[_]](val serializer: S) {
     def bind[O](value: O) = macro BinderProxy.bind[S, O]
 
-    def bindArgs(t: Any*) = macro BinderProxy.bindArgs
+    def bindArgs(t: Any*) = macro BinderProxy.bindArgs[S]
 
     def bindPartial[O <: Product](value: O) = macro BinderProxy.bindPartial[S, O]
   }
