@@ -4,4 +4,5 @@ import eu.inn.binders.naming.Converter
 
 trait Serializer[C <: Converter] {
   type nameConverterType = C
+  def writeNull()
 }

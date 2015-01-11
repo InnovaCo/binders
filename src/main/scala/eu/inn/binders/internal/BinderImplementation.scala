@@ -17,11 +17,13 @@ private trait BinderImplementation {
 
     val block =
     if (!writer.isDefined) {
-      if (tpe <:< typeOf[Product]){
+      if (tpe <:< typeOf[Option[_]]){
+        bindOption[S, O](value)
+      }
+      else if (tpe <:< typeOf[Product]){
         bindObject[S, O](value, partial = false)
       }
-      else
-      if (tpe <:< typeOf[TraversableOnce[_]]){
+      else if (tpe <:< typeOf[TraversableOnce[_]]){
         bindTraversable[S, O](value)
       }
       else
@@ -49,6 +51,21 @@ private trait BinderImplementation {
       }"""
 
     // println(block)
+    block
+  }
+
+  def bindOption[S: c.WeakTypeTag, O: c.WeakTypeTag](value: c.Tree): c.Tree = {
+    val block = q"""{
+      val to = ${c.prefix.tree}
+      val o = $value
+      o.map {
+        ov => to.serializer.bind(ov)
+      } getOrElse {
+        to.serializer.writeNull
+      }
+      to.serializer.serializer
+      }"""
+    //println(block)
     block
   }
 
@@ -105,15 +122,33 @@ private trait BinderImplementation {
         val companionType = tpe.typeSymbol.companionSymbol.typeSignature
         companionType.declaration(newTermName("unapply")) match {
           case NoSymbol =>
-            if (tpe <:< typeOf[TraversableOnce[_]]) {
+            if (tpe <:< typeOf[Option[_]]) {
+              unbindOption[D,O]
+            }
+            else if (tpe <:< typeOf[TraversableOnce[_]]) {
               unbindIterable[D,O]
             }
             else {
               c.abort(c.enclosingPosition, s"No read function found for $tpe in ${weakTypeOf[D]}")
             }
-          case s => unbindProduct[D,O](partial, originalValue)
+          case s => unbindObject[D,O](partial, originalValue)
         }
       }
+    //println(block)
+    block
+  }
+
+  def unbindOption[D: c.WeakTypeTag, O: c.WeakTypeTag]: c.Tree = {
+    val tpe = weakTypeOf[O]
+    val elTpe = extractTypeArgs(tpe).head
+
+    val block = q"""{
+      val too = ${c.prefix.tree}
+      if (too.deserializer.isNull)
+        None
+      else
+        Some(too.deserializer.unbind[$elTpe])
+    }"""
     //println(block)
     block
   }
@@ -128,7 +163,7 @@ private trait BinderImplementation {
     }"""
   }
 
-  def unbindProduct[D: c.WeakTypeTag, O: c.WeakTypeTag](partial: Boolean, originalValue: c.Tree): c.Tree = {
+  def unbindObject[D: c.WeakTypeTag, O: c.WeakTypeTag](partial: Boolean, originalValue: c.Tree): c.Tree = {
     val converter = findConverter[D]
     val caseClassParams = extractCaseClassParams[O]
 

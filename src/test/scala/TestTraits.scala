@@ -13,6 +13,10 @@ trait TestDeserializer[C <: Converter] extends Deserializer[C] {
 
   def readDateNullable(): Option[Date]
 
+  def readLong(): Long
+
+  def isNull: Boolean
+
   def iterator(): Iterator[TestDeserializer[C]]
 }
 
@@ -36,6 +40,10 @@ trait TestSerializer[C <: Converter] extends Serializer[C] {
   def writeMap[K, V](value: Map[K, V])
 
   def writeMapNullable[K, V](value: Option[Map[K, V]])
+
+  def writeLong(value: Long)
+
+  def writeNull()
 
   def getFieldSerializer(fieldName: String): Option[TestSerializer[C]]
 
