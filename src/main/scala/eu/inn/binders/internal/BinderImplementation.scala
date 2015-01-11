@@ -101,6 +101,7 @@ private trait BinderImplementation {
       ${callIfExists[S](q"ts.serializer", "beginArray")}
       it.foreach(ts.bind(_))
       ${callIfExists[S](q"ts.serializer", "endArray")}
+      ts.serializer
     }"""
     //println(block)
     block
