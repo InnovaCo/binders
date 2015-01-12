@@ -27,7 +27,7 @@ private trait BinderImplementation {
         bindTraversable[S, O](value)
       }
       else
-        c.abort(c.enclosingPosition, s"No write function found for parameter with type $tpe")
+        c.abort(c.enclosingPosition, s"No write function found for parameter with type $tpe in ${weakTypeOf[S]}")
     }
     else {
       q"""{
