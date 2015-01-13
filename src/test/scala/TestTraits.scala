@@ -15,6 +15,10 @@ trait TestDeserializer[C <: Converter] extends Deserializer[C] {
 
   def readLong(): Long
 
+  def readString(): String
+
+  def readMap[K, V](): Map[K, V]
+
   def isNull: Boolean
 
   def iterator(): Iterator[TestDeserializer[C]]
@@ -43,6 +47,8 @@ trait TestSerializer[C <: Converter] extends Serializer[C] {
 
   def writeLong(value: Long)
 
+  def writeString(value: String)
+
   def writeNull()
 
   def getFieldSerializer(fieldName: String): Option[TestSerializer[C]]
@@ -51,11 +57,3 @@ trait TestSerializer[C <: Converter] extends Serializer[C] {
 
   def endArray()
 }
-
-case class TestProduct(intValue1: Int, nullableValue: Option[Int], intValue2: Int)
-
-case class TestInnerProduct(inner: TestProduct, nullableInner: Option[TestProduct], nullableInner1: Option[TestProduct])
-
-case class TestCollections(intLst: List[Int], strSet: Set[String], longStrMap: Map[Long, String])
-
-case class TestGenericCollections(genericMap: Option[Map[String, Set[Int]]], genericMapNone: Option[Map[String, Set[Int]]])

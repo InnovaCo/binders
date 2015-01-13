@@ -234,7 +234,10 @@ private trait BinderImplementation {
       else
         None
     selector.map { s =>
-      Select(iteratorTree, newTermName(s))
+      if (ct <:< typeOf[Set[_]]) // toSet needs also TypeApply
+        TypeApply(Select(iteratorTree, newTermName(s)), ct.typeArgs.map(TypeTree(_)))
+      else
+        Select(iteratorTree, newTermName(s))
     } getOrElse {
       iteratorTree
     }

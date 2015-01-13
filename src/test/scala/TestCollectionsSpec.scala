@@ -4,7 +4,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import org.mockito.Mockito._
 import eu.inn.binders._
 
-case class TestCls(data: Option[Map[String, Set[Int]]])
+case class TestClsWithInnerSet(data: Option[Map[String, Set[Int]]])
 
 class TestCollectionsSpec extends FlatSpec with Matchers {
 

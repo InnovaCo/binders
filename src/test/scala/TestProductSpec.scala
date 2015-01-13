@@ -4,6 +4,9 @@ import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar.mock
 import org.scalatest.{FlatSpec, Matchers}
 
+case class TestProduct(intValue1: Int, nullableValue: Option[Int], intValue2: Int)
+case class TestInnerProduct(inner: TestProduct, nullableInner: Option[TestProduct], nullableInner1: Option[TestProduct])
+
 class TestProductSpec extends FlatSpec with Matchers {
 
   "all case class fields " should " be serialized by names " in {
@@ -141,4 +144,46 @@ class TestProductSpec extends FlatSpec with Matchers {
     val t = m.unbindPartial(TestProduct(-1, Some(555), -2))
     assert(t === TestProduct(123456, Some(555), 7890))
   }
+
+  "all inner case class fields " should " be deserialized by names " in {
+
+    val m1 = mock[TestDeserializer[PlainConverter]]
+    when(m1.fieldName).thenReturn(Some("intValue1"))
+    when(m1.readInt()).thenReturn(123456)
+
+    val m2 = mock[TestDeserializer[PlainConverter]]
+    when(m2.fieldName).thenReturn(Some("nullableValue"))
+    when(m2.readIntNullable()).thenReturn(Some(555))
+
+    val m3 = mock[TestDeserializer[PlainConverter]]
+    when(m3.fieldName).thenReturn(Some("intValue2"))
+    when(m3.readInt()).thenReturn(7890)
+
+    val mi = List(m1,m2,m3)
+
+    val mf1 = mock[TestDeserializer[PlainConverter]]
+    when(mf1.fieldName).thenReturn(Some("inner"))
+    when(mf1.iterator()).thenReturn(mi.toIterator)
+
+    val mn = mock[TestDeserializer[PlainConverter]]
+    when(mn.isNull).thenReturn(true)
+    when(mn.fieldName).thenReturn(Some("nullableInner"))
+
+    val mf2 = mock[TestDeserializer[PlainConverter]]
+    when(mf2.fieldName).thenReturn(Some("nullableInner1"))
+    when(mf2.iterator()).thenReturn(mi.toIterator)
+
+    val mo = mock[TestDeserializer[PlainConverter]]
+    val moi = List(mf1,mn,mf2)
+    when(mo.iterator()).thenReturn(moi.toIterator)
+
+    val t = mo.unbind[TestInnerProduct]
+    assert(t === TestInnerProduct(
+      TestProduct(123456, Some(555), 7890),
+      None,
+      Some(TestProduct(123456, Some(555), 7890))
+    ))
+  }
+
+  // todo: inner class serialization
 }
