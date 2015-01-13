@@ -4,6 +4,8 @@ import org.scalatest.{FlatSpec, Matchers}
 import org.mockito.Mockito._
 import eu.inn.binders._
 
+case class TestCls(data: Option[Map[String, Set[Int]]])
+
 class TestCollectionsSpec extends FlatSpec with Matchers {
 
   def getMockList = {
@@ -86,4 +88,13 @@ class TestCollectionsSpec extends FlatSpec with Matchers {
     val l = m.unbind[List[Int]]
     assert (l === List(123456, 7890))
   }
+
+  /* todo: fix this:
+  "1" should "2" in {
+
+    //val m = getMockList// mock[TestDeserializer[PlainConverter]]
+    val m = mock[TestDeserializer[PlainConverter]]
+    m.unbind[TestCls]
+  }
+  */
 }
