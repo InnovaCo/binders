@@ -229,7 +229,7 @@ private trait BinderImplementation {
         Some("toSet")
       }else
       if (ct <:< typeOf[Seq[_]]) {
-        Some("toSeq")
+        Some("toList") // don't use toSeq which creates lazy stream sequence
       }
       else
         None
