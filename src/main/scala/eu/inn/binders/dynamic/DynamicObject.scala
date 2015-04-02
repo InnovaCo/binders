@@ -2,8 +2,13 @@ package eu.inn.binders.dynamic
 
 import java.util.Date
 
-case class DynamicObject(typ: DynamicType.Value, value: Any) /*extends Dynamic*/ {
-  def isNull = typ == DynamicType.Null
+class DynamicObject extends Any {
+
+}
+
+/*
+class DynamicObject(val value: Any) /*extends Dynamic*/ {
+  def isNull = value == null
   def asMap = value.asInstanceOf[Map[String, DynamicObject]]
   def asSeq = value.asInstanceOf[Seq[DynamicObject]]
   def asInt = value.asInstanceOf[Int]
@@ -17,17 +22,17 @@ case class DynamicObject(typ: DynamicType.Value, value: Any) /*extends Dynamic*/
 }
 
 object DynamicObject {
-  def apply() = DynamicObject(DynamicType.Null, null)
-  def apply(mapValue: Map[String, DynamicObject]) = DynamicObject(DynamicType.Map, mapValue)
-  def apply(seqValue: Seq[DynamicObject]) = DynamicObject(DynamicType.Seq, seqValue)
-  def apply(intValue: Int) = DynamicObject(DynamicType.Int, intValue)
-  def apply(longValue: Long) = DynamicObject(DynamicType.Long, longValue)
-  def apply(stringValue: String) = DynamicObject(DynamicType.String, stringValue)
-  def apply(floatValue: Float) = DynamicObject(DynamicType.Float, floatValue)
-  def apply(doubleValue: Double) = DynamicObject(DynamicType.Double, doubleValue)
-  def apply(booleanValue: Boolean) = DynamicObject(DynamicType.Boolean, booleanValue)
-  def apply(bigDecimalValue: BigDecimal) = DynamicObject(DynamicType.BigDecimal, bigDecimalValue)
-  def apply(dateValue: Date) = DynamicObject(DynamicType.Date, dateValue)
+  def apply() = new DynamicObject(DynamicType.Null, null)
+  def apply(mapValue: Map[String, DynamicObject]) = new DynamicObject(DynamicType.Map, mapValue)
+  def apply(seqValue: Seq[DynamicObject]) = new DynamicObject(DynamicType.Seq, seqValue)
+  def apply(intValue: Int) = new DynamicObject(DynamicType.Int, intValue)
+  def apply(longValue: Long) = new DynamicObject(DynamicType.Long, longValue)
+  def apply(stringValue: String) = new DynamicObject(DynamicType.String, stringValue)
+  def apply(floatValue: Float) = new DynamicObject(DynamicType.Float, floatValue)
+  def apply(doubleValue: Double) = new DynamicObject(DynamicType.Double, doubleValue)
+  def apply(booleanValue: Boolean) = new DynamicObject(DynamicType.Boolean, booleanValue)
+  def apply(bigDecimalValue: BigDecimal) = new DynamicObject(DynamicType.BigDecimal, bigDecimalValue)
+  def apply(dateValue: Date) = new DynamicObject(DynamicType.Date, dateValue)
 }
 
 object DynamicType extends Enumeration {
@@ -46,3 +51,4 @@ object DynamicType extends Enumeration {
     Date
   = Value
 }
+*/
