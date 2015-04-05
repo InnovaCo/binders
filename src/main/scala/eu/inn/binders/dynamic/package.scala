@@ -10,6 +10,6 @@ package object dynamic {
     }
 
     implicit class DynamicGenerator[O](val obj: O) {
-      def toDynamic: Any = macro DynamicMacro.toDynamic[O]
+      def toDynamic: DynamicObject = macro DynamicMacro.toDynamic[O]
     }
 }

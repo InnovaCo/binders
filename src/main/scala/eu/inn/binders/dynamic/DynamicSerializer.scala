@@ -9,13 +9,13 @@ import scala.language.experimental.macros
 class DynamicSerializeException(message: String) extends RuntimeException(message)
 
 trait DynamicSerializerBaseTrait[C <: Converter] extends Serializer[C] {
-  def asDynamic: Any
+  def asDynamic: DynamicObject
 }
 
 class DynamicSerializerBase[C <: Converter, F <: DynamicSerializerBaseTrait[C]] extends DynamicSerializerBaseTrait[C]{
-  var dynamic: Any = null
+  var dynamic: DynamicObject = null
   var map: scala.collection.mutable.Map[String, DynamicSerializerBaseTrait[C]] = null
-  var seq: scala.collection.mutable.ArrayBuffer[Any] = null
+  var seq: scala.collection.mutable.ArrayBuffer[DynamicObject] = null
 
   def getFieldSerializer(fieldName: String): Option[F] = {
     if (map != null) {
@@ -30,15 +30,17 @@ class DynamicSerializerBase[C <: Converter, F <: DynamicSerializerBaseTrait[C]] 
   protected def createFieldSerializer(): F = ???
 
   def writeNull() = writeDynamicObject(null)
-  def writeInteger(value: Int) = writeDynamicObject(value)
-  def writeLong(value: Long) = writeDynamicObject(value)
-  def writeString(value: String) = writeDynamicObject(value)
-  def writeFloat(value: Float) = writeDynamicObject(value)
-  def writeDouble(value: Double) = writeDynamicObject(value)
-  def writeBoolean(value: Boolean) = writeDynamicObject(value)
-  def writeBigDecimal(value: BigDecimal) = writeDynamicObject(value)
-  def writeDate(value: Date) = writeDynamicObject(value)
-  def writeDynamicObject(value: Any): Unit = {
+
+  def writeString(value: String) = writeDynamicObject(DynamicObject(value))
+  def writeBoolean(value: Boolean) = writeDynamicObject(DynamicObject(value))
+  def writeBigDecimal(value: BigDecimal) = writeDynamicObject(DynamicObject(value))
+  def writeInt(value: Int) = writeDynamicObject(DynamicObject(value))
+  def writeLong(value: Long) = writeDynamicObject(DynamicObject(value))
+  def writeFloat(value: Float) = writeDynamicObject(DynamicObject(value))
+  def writeDouble(value: Double) = writeDynamicObject(DynamicObject(value))
+  def writeDate(value: Date) = writeDynamicObject(DynamicObject(value))
+
+  def writeDynamicObject(value: DynamicObject): Unit = {
     if (seq != null)
       seq += value
     else
@@ -50,20 +52,20 @@ class DynamicSerializerBase[C <: Converter, F <: DynamicSerializerBaseTrait[C]] 
   }
 
   def endObject(): Unit = {
-    dynamic = map.toMap.map(kv => (kv._1, kv._2.asDynamic))
+    dynamic = DynamicObject(map.toMap.map(kv => (kv._1, kv._2.asDynamic)))
     map = null
   }
 
   def beginArray(): Unit = {
-    seq = new scala.collection.mutable.ArrayBuffer[Any]()
+    seq = new scala.collection.mutable.ArrayBuffer[DynamicObject]()
   }
 
   def endArray(): Unit = {
-    dynamic = seq
+    dynamic = DynamicObject(seq.toSeq)
     seq = null
   }
 
-  def asDynamic: Any = dynamic
+  def asDynamic: DynamicObject = dynamic
 }
 
 class DynamicSerializer[C <: Converter] extends DynamicSerializerBase[C, DynamicSerializer[C]]{

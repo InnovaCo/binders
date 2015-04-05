@@ -4,24 +4,24 @@ import eu.inn.binders.core.{Deserializer, Serializer}
 import eu.inn.binders.naming.{PlainConverter, Converter}
 
 trait DynamicSerializerFactory[C <: Converter, S <: DynamicSerializerBase[C,_], D <: Deserializer[C]] {
-  def withDeserializer[T](dynamic: Any, codeBlock: D ⇒ T): T = {
+  def withDeserializer[T](dynamic: DynamicObject, codeBlock: D ⇒ T): T = {
     val deserializer = createDeserializer(dynamic)
     codeBlock(deserializer)
   }
 
-  def withSerializer(codeBlock: S ⇒ Unit): Any = {
+  def withSerializer(codeBlock: S ⇒ Unit): DynamicObject = {
     val serializer = createSerializer()
     codeBlock(serializer)
     serializer.asDynamic
   }
 
   def createSerializer(): S
-  def createDeserializer(dynamic: Any): D
+  def createDeserializer(dynamic: DynamicObject): D
 }
 
 class DefaultDynamicSerializerFactory[C <: Converter] extends DynamicSerializerFactory[C, DynamicSerializer[C], DynamicDeserializer[C]] {
   override def createSerializer(): DynamicSerializer[C] = new DynamicSerializer[C]()
-  override def createDeserializer(dynamic: Any): DynamicDeserializer[C] = new DynamicDeserializer[C](dynamic)
+  override def createDeserializer(dynamic: DynamicObject): DynamicDeserializer[C] = new DynamicDeserializer[C](dynamic)
 }
 
 object DynamicSerializerFactory {
