@@ -31,9 +31,6 @@ class DynamicDeserializerBase[C <: Converter, I <: Deserializer[C]] (dynamic: Dy
   def readBigDecimal(): BigDecimal = dynamic.asBigDecimal
   def readDate(): Date = dynamic.asDate
   def readDynamic(): DynamicValue = dynamic
-
-//  def readMap(): Map[String,DynamicObject] = dynamic.asMap
-//  def readSeq(): Seq[DynamicObject] = dynamic.asSeq
 }
 
 class DynamicDeserializer[C <: Converter] (dynamic: DynamicValue, override val fieldName: Option[String] = None)
