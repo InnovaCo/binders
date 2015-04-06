@@ -1,6 +1,6 @@
 package eu.inn.binders.dynamic.internal
 
-import eu.inn.binders.dynamic.DynamicObject
+import eu.inn.binders.dynamic.DynamicValue
 
 import scala.language.experimental.macros
 import scala.language.reflectiveCalls

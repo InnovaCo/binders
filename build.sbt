@@ -2,13 +2,13 @@ import sbt.Keys._
 
 name := "binders-core"
 
-version := "0.4.11"
+version := "0.5.12"
 
 organization := "eu.inn"
 
-scalaVersion := "2.11.4"
+scalaVersion := "2.11.6"
 
-crossScalaVersions := Seq("2.11.4", "2.10.4")
+crossScalaVersions := Seq("2.11.5", "2.10.5")
 
 resolvers ++= Seq("Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/")
 

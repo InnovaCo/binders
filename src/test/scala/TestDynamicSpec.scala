@@ -1,20 +1,23 @@
 
-import eu.inn.binders.dynamic.DynamicObject
+
+import eu.inn.binders.dynamic.{Number, DynamicValue}
 import org.scalatest._
 
-class TestDynamicSpec extends FlatSpec with Matchers {
-  /*"toDynamic " should " match int " in {
-    import eu.inn.binders.dynamic._
-    val i1 = 123456
-    val d1 = i1.toDynamic
-    assert (d1.asInt == 123456)
-  }*/
+case class TestDynamic(a:Int,b:String,c:Boolean)
 
+class TestDynamicSpec extends FlatSpec with Matchers {
   "toDynamic " should " serialize int " in {
     import eu.inn.binders.dynamic._
     val i1 = 123456
     val d1 = i1.toDynamic
     assert (d1.asInt == 123456)
+  }
+
+  "fromDynamic " should " deserialize int " in {
+    import eu.inn.binders.dynamic._
+    val d1 = Number(123456)
+    val i1 = d1.fromDynamic[Int]
+    assert (i1 == 123456)
   }
 
   "toDynamic " should " serialize long " in {
@@ -24,6 +27,13 @@ class TestDynamicSpec extends FlatSpec with Matchers {
     assert (d1.asLong == 123456l)
   }
 
+  "fromDynamic " should " deserialize long " in {
+    import eu.inn.binders.dynamic._
+    val d1 = Number(Long.MaxValue)
+    val i1 = d1.fromDynamic[Long]
+    assert (i1 == Long.MaxValue)
+  }
+
   "toDynamic " should " serialize string " in {
     import eu.inn.binders.dynamic._
     val i1 = "yey"
@@ -31,21 +41,50 @@ class TestDynamicSpec extends FlatSpec with Matchers {
     assert (d1.asString == "yey")
   }
 
+  "fromDynamic " should " deserialize string " in {
+    import eu.inn.binders.dynamic._
+    val d1 = Text("ho")
+    val i1 = d1.fromDynamic[String]
+    assert (i1 == "ho")
+  }
+
   "toDynamic " should " serialize Seq[Int] " in {
     import eu.inn.binders.dynamic._
     val i1 = Seq(1,2,3)
     val d1 = i1.toDynamic
-    d1.asSeq should contain allOf (DynamicObject(1),DynamicObject(2))// i1//(List(1,2,3).map(DynamicObject(_)))
+    d1.asSeq should equal (Seq(1,2,3).map(Number(_)))
   }
 
-  /*
+  "fromDynamic " should " deserialize Seq[Int] " in {
+    import eu.inn.binders.dynamic._
+    val d1 = Lst(Seq(Number(1),Text("2"),Number(3)))
+    val i1 = d1.fromDynamic[Seq[Int]]
+    i1 should equal (Seq(1,2,3))
+  }
+
   "toDynamic " should " serialize Map[String,Int] " in {
     import eu.inn.binders.dynamic._
-    val i1 = Map("f1" -> 1, "f2" -> 2, "f3" -> 3)
+    val i1: Map[String,Int] = Map("a" -> 1, "b" -> 2, "c" -> 3)
     val d1 = i1.toDynamic
-    assert (d1.asMap ==
-      Map("f1" -> DynamicObject(1), "f2" -> DynamicObject(1), "f3" -> DynamicObject(1))
-    )
+    d1.asMap should equal (i1 map toDynamicNumber)
   }
-  */
+
+  "fromDynamic " should " deserialize Map[String,Int] " in {
+    import eu.inn.binders.dynamic._
+    val m = Map("a" -> 1, "b" -> 2, "c" -> 3)
+    val d1 = Obj(m map toDynamicNumber)
+    val i1 = d1.fromDynamic[Map[String,Int]]
+    i1 should equal (m)
+  }
+
+  "toDynamic " should " serialize Obj " in {
+    import eu.inn.binders.dynamic._
+    val i1 = TestDynamic(1,"ho",true)
+    val d1 = i1.toDynamic
+    d1.asMap should equal (Map("a" -> Number(1), "b" -> Text("ho"), "c" -> Bool(true)))
+  }
+
+  def toDynamicNumber(kv: (String, Int)) = {
+    (kv._1, Number(kv._2))
+  }
 }

@@ -1,7 +1,7 @@
 package eu.inn.binders.dynamic.internal
 
 
-import eu.inn.binders.dynamic.DynamicObject
+import eu.inn.binders.dynamic.DynamicValue
 
 import scala.language.experimental.macros
 import scala.language.reflectiveCalls
@@ -18,11 +18,11 @@ object DynamicMacro {
   }
 
   def toDynamic[O: c.WeakTypeTag]
-  (c: Context): c.Expr[DynamicObject] = {
+  (c: Context): c.Expr[DynamicValue] = {
     val c0: c.type = c
     val bundle = new {
       val c: c0.type = c0
     } with DynamicMacroImpl
-    c.Expr[DynamicObject](bundle.toDynamic[O])
+    c.Expr[DynamicValue](bundle.toDynamic[O])
   }
 }

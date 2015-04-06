@@ -19,6 +19,9 @@ private trait BinderImplementation {
     if (!writer.isDefined) {
       if (tpe <:< typeOf[Option[_]]){
         bindOption[S, O](value)
+      }else
+      if (tpe <:< typeOf[Map[_,_]]){
+        bindMap(value)
       }
       else if (tpe <:< typeOf[Product]){
         bindObject[S, O](value, partial = false)
@@ -107,6 +110,21 @@ private trait BinderImplementation {
     block
   }
 
+  def bindMap(value: c.Tree): c.Tree = {
+    val block = q"""{
+      val tm = ${c.prefix.tree}
+      val it = $value
+      tm.serializer.beginObject()
+      it.foreach(kv => {
+        tm.serializer.getFieldSerializer(kv._1).map(_.bind(kv._2))
+      })
+      tm.serializer.endObject()
+      tm.serializer
+    }"""
+    //println(block)
+    block
+  }
+
   def unbind[D: c.WeakTypeTag, O: c.WeakTypeTag](partial: Boolean, originalValue: c.Tree): c.Tree = {
     val tpe = weakTypeOf[O]
     val readers = extractReaders[D]
@@ -125,6 +143,9 @@ private trait BinderImplementation {
           case NoSymbol =>
             if (tpe <:< typeOf[Option[_]]) {
               unbindOption[D,O]
+            }
+            else if (tpe <:< typeOf[Map[_,_]]) {
+              unbindMap[O]
             }
             else if (tpe <:< typeOf[TraversableOnce[_]]) {
               unbindIterable[D,O]
@@ -214,6 +235,19 @@ private trait BinderImplementation {
     }"""
   }
 
+  def unbindMap[O: c.WeakTypeTag]: c.Tree = {
+    val tpe = weakTypeOf[O]
+    val elTpe = extractTypeArgs(tpe).tail.head
+    val block = q"""{
+      val tm = ${c.prefix.tree}
+      tm.deserializer.iterator().map{ el =>
+        (el.fieldName.get, el.unbind[$elTpe])
+      }.toMap
+    }"""
+    //println(block)
+    block
+  }
+
   protected def convertIterator(ct: Type, iteratorTree: Tree): Tree = {
     val selector: Option[String] =
       if (ct <:< typeOf[Vector[_]]) {
@@ -288,7 +322,7 @@ private trait BinderImplementation {
   protected def mostMatching(methods: List[MethodSymbol], scoreFun: MethodSymbol => Option[(Int, Map[Symbol, Type])]): Option[(MethodSymbol, Map[Symbol, Type])] = {
     var rMax: Int = 0
     var mRes: Option[(MethodSymbol,Map[Symbol, Type])] = None
-    methods.map({ m => // todo: replace to .max and remove vars
+    methods.foreach({ m => // todo: replace to .max and remove vars
       scoreFun(m) match {
         case Some((r, typeArgs)) =>
           if (r > rMax) {
