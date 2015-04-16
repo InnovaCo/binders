@@ -40,11 +40,13 @@ trait DynamicMacroImpl {
     val block =
     if (tpe <:< typeOf[Option[_]])
       q"""{
+      import eu.inn.binders.dynamic._
       val t = ${c.prefix.tree}
       t.asMap.get($fieldName).map(_.fromDynamic[$tpe]).flatten
       }"""
     else
       q"""{
+      import eu.inn.binders.dynamic._
       val t = ${c.prefix.tree}
       t.asMap.get($fieldName).map(_.fromDynamic[$tpe]).getOrElse(throw new eu.inn.binders.core.FieldNotFoundException($fieldName))
       }"""
