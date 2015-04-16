@@ -3,7 +3,6 @@ package eu.inn.binders.dynamic
 import java.util.Date
 
 import eu.inn.binders.core.Serializer
-import eu.inn.binders.dynamic.internal.DynamicMacro
 import eu.inn.binders.naming.Converter
 import scala.language.experimental.macros
 

@@ -25,4 +25,13 @@ object DynamicMacro {
     } with DynamicMacroImpl
     c.Expr[DynamicValue](bundle.toDynamic[O])
   }
+
+  def selectDynamic[O: c.WeakTypeTag]
+  (c: Context)(name: c.Expr[String]): c.Expr[O] = {
+    val c0: c.type = c
+    val bundle = new {
+      val c: c0.type = c0
+    } with DynamicMacroImpl
+    c.Expr[O](bundle.selectDynamic[O](name))
+  }
 }

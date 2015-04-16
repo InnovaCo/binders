@@ -1,5 +1,6 @@
 
 
+import eu.inn.binders.core.FieldNotFoundException
 import eu.inn.binders.dynamic.{Number, DynamicValue}
 import org.scalatest._
 
@@ -82,6 +83,33 @@ class TestDynamicSpec extends FlatSpec with Matchers {
     val i1 = TestDynamic(1,"ho",true)
     val d1 = i1.toDynamic
     d1.asMap should equal (Map("a" -> Number(1), "b" -> Text("ho"), "c" -> Bool(true)))
+  }
+
+  "DynamicValue " should " allow selectDynamic " in {
+    import eu.inn.binders.dynamic._
+
+    val d = Obj(Map("a" -> Number(1), "b" -> Text("ho"), "c" -> Bool(true), "_" -> Bool(false)))
+    val a = d.a[Int]
+    a should equal(1)
+
+    val b = d.b[String]
+    b should equal("ho")
+
+    val bo = d.b[Option[String]]
+    bo should equal(Some("ho"))
+
+    val x = d.x[Option[String]]
+    x should equal(None)
+
+    val y = d.y[Option[Int]]
+    y should equal(None)
+
+    val f = d.__[Boolean]
+    f should equal(false)
+
+    intercept[FieldNotFoundException] {
+      d.x[String]
+    }
   }
 
   def toDynamicNumber(kv: (String, Int)) = {

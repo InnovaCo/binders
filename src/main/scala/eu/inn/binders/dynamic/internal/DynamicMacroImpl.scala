@@ -31,4 +31,30 @@ trait DynamicMacroImpl {
     //println(block)
     block
   }
+
+  def selectDynamic[O: c.WeakTypeTag](name: c.Expr[String]): c.Tree = {
+    val Literal(Constant(defName: String)) = name.tree
+    val fieldName = readerNameToField(defName)
+    val tpe = weakTypeOf[O]
+
+    val block =
+    if (tpe <:< typeOf[Option[_]])
+      q"""{
+      val t = ${c.prefix.tree}
+      t.asMap.get($fieldName).map(_.fromDynamic[$tpe]).flatten
+      }"""
+    else
+      q"""{
+      val t = ${c.prefix.tree}
+      t.asMap.get($fieldName).map(_.fromDynamic[$tpe]).getOrElse(throw new eu.inn.binders.core.FieldNotFoundException($fieldName))
+      }"""
+    //println(block)
+    block
+  }
+
+  def readerNameToField(readerName: String) = if (readerName.startsWith("_") && readerName.length > 1) {
+    readerName.substring(1)
+  } else {
+    readerName
+  }
 }

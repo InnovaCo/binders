@@ -1,8 +1,11 @@
 package eu.inn.binders.dynamic
 
 import java.util.Date
+import eu.inn.binders.dynamic.internal.DynamicMacro
+import scala.language.experimental.macros
+import scala.language.dynamics
 
-trait DynamicValue {
+trait DynamicValue extends Dynamic {
   def accept[T](visitor: DynamicVisitor[T]): T
 
   def asString: String = {
@@ -74,6 +77,8 @@ trait DynamicValue {
   }
 
   def castUnavailable(s: String) = throw new ClassCastException(s)
+
+  def selectDynamic[T](name: String) = macro DynamicMacro.selectDynamic[T]
 }
 
 trait DynamicVisitor[T] {
