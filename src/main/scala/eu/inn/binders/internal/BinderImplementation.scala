@@ -538,7 +538,7 @@ private trait BinderImplementation {
 
     converterTypeOption map { t =>
       // this is synchronized because of bug in scala
-      // http://stackoverflow.com/questions/7826822/why-this-synchronized-instead-of-just-synchronized-in-scala
+      // http://docs.scala-lang.org/overviews/reflection/thread-safety.html
       this.synchronized {
         val ru = scala.reflect.runtime.universe
 
