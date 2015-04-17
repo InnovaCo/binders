@@ -1,5 +1,6 @@
 package eu.inn.internal
 
+import scala.collection.SeqLike
 import scala.language.reflectiveCalls
 import scala.reflect.macros.Context
 import language.experimental.macros
@@ -19,6 +20,9 @@ private trait BinderImplementation {
     if (!writer.isDefined) {
       if (tpe <:< typeOf[Option[_]]){
         bindOption[S, O](value)
+      }else
+      if (tpe <:< typeOf[Either[_,_]]){
+        bindEither[S, O](value)
       }else
       if (tpe <:< typeOf[Map[_,_]]){
         bindMap(value)
@@ -65,6 +69,20 @@ private trait BinderImplementation {
         ov => to.serializer.bind(ov)
       } getOrElse {
         to.serializer.writeNull
+      }
+      to.serializer.serializer
+      }"""
+    //println(block)
+    block
+  }
+
+  def bindEither[S: c.WeakTypeTag, O: c.WeakTypeTag](value: c.Tree): c.Tree = {
+    val block = q"""{
+      val to = ${c.prefix.tree}
+      val o = $value
+      o match {
+        case Left(left) => to.serializer.bind(left)
+        case Right(right) => to.serializer.bind(right)
       }
       to.serializer.serializer
       }"""
@@ -143,8 +161,11 @@ private trait BinderImplementation {
           case NoSymbol =>
             if (tpe <:< typeOf[Option[_]]) {
               unbindOption[D,O]
-            }
-            else if (tpe <:< typeOf[Map[_,_]]) {
+            }else
+            if (tpe <:< typeOf[Either[_,_]]){
+              unbindEither[D,O]
+            }else
+            if (tpe <:< typeOf[Map[_,_]]) {
               unbindMap[O]
             }
             else if (tpe <:< typeOf[TraversableOnce[_]]) {
@@ -173,6 +194,65 @@ private trait BinderImplementation {
     }"""
     //println(block)
     block
+  }
+
+  def unbindEither[D: c.WeakTypeTag, O: c.WeakTypeTag]: c.Tree = {
+    val tpe = weakTypeOf[O]
+    val left = extractTypeArgs(tpe).head
+    val right = extractTypeArgs(tpe).tail.head
+
+    val leftDStr = getTypeDynamicString(left.tpe)
+    val rightDStr = getTypeDynamicString(right.tpe)
+
+    val block = q"""{
+      val too = ${c.prefix.tree}
+      import eu.inn.binders.dynamic._
+      import scala.util._
+      val value = too.deserializer.unbind[DynamicValue]
+      val leftIsBetter = eu.inn.binders.internal.Helpers.getConformity($leftDStr,value) >=
+        eu.inn.binders.internal.Helpers.getConformity($rightDStr,value)
+
+      val r = Try (if (leftIsBetter) Left(value.fromDynamic[$left]) else Right(value.fromDynamic[$right]))
+        match {
+          case Success(r1) => r1
+          case Failure(e1) =>
+            Try (if (leftIsBetter) Right(value.fromDynamic[$right]) else Left(value.fromDynamic[$left]))
+            match {
+              case Success(r2) => r2
+              case Failure(e2) =>
+                throw new eu.inn.binders.core.BindersException("Value '"+value+"' didn't match neither Left nor Right", e2)
+            }
+        }
+      r
+    }"""
+    //println(block)
+    block
+  }
+
+  def getTypeDynamicString(ct: Type) = {
+    val t = if (ct <:< typeOf[Option[_]]) extractTypeArgs(ct).head.tpe else ct
+
+    if (t =:= typeOf[Double]
+      || t =:= typeOf[Float]
+      || t =:= typeOf[Int]
+      || t =:= typeOf[Long]
+      || t =:= typeOf[Byte]
+      || t =:= typeOf[Short]) {
+      "Number"
+    }else
+    if (t =:= typeOf[String]) {
+      "Text"
+    }else
+    if (t =:= typeOf[Boolean]) {
+      "Bool"
+    }else
+    if (t <:< typeOf[SeqLike[_,_]]) {
+      "Lst"
+    }
+    else {
+      "Obj"
+    }
+    //Iterable
   }
 
   def unbindIterable[D: c.WeakTypeTag, O: c.WeakTypeTag]: c.Tree = {
@@ -297,7 +377,7 @@ private trait BinderImplementation {
           } getOrElse {
             c.abort(c.enclosingPosition, "Can't find generic arg source for " + select + " / " + genericTypeSymbol)
           }
-        } toList)
+        })
     }
 
   }

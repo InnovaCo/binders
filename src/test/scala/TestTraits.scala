@@ -1,4 +1,5 @@
 import eu.inn.binders.core.{Serializer, Deserializer}
+import eu.inn.binders.dynamic.DynamicValue
 import eu.inn.binders.naming.Converter
 import java.util.Date
 
@@ -20,6 +21,8 @@ trait TestDeserializer[C <: Converter] extends Deserializer[C] {
   def readMap[K, V](): Map[K, V]
 
   def isNull: Boolean
+
+  def readDynamic(): DynamicValue
 
   def iterator(): Iterator[TestDeserializer[C]]
 }
