@@ -3,6 +3,7 @@
 import eu.inn.binders.core.FieldNotFoundException
 import eu.inn.binders.dynamic.{Number, DynamicValue}
 import org.scalatest._
+import eu.inn.binders.dynamic._
 
 case class TestDynamic(a:Int,b:String,c:Boolean)
 
@@ -86,8 +87,6 @@ class TestDynamicSpec extends FlatSpec with Matchers {
   }
 
   "DynamicValue " should " allow selectDynamic " in {
-    import eu.inn.binders.dynamic._
-
     val d = Obj(Map("a" -> Number(1), "b" -> Text("ho"), "c" -> Bool(true), "_" -> Bool(false)))
     val a = d.a[Int]
     a should equal(1)
@@ -95,11 +94,11 @@ class TestDynamicSpec extends FlatSpec with Matchers {
     val b = d.b[String]
     b should equal("ho")
 
-    /*val bo = d.b[Option[String]]
+    val bo = d.b[Option[String]]
     bo should equal(Some("ho"))
 
-    val x = d.x[Option[String]]
-    x should equal(None)*/
+    val z = d.zz[Option[String]]
+    z should equal(None)
 
     val y = d.y[Option[Int]]
     y should equal(None)
@@ -108,7 +107,7 @@ class TestDynamicSpec extends FlatSpec with Matchers {
     f should equal(false)
 
     intercept[FieldNotFoundException] {
-      d.x[String]
+      d.zeo[String]
     }
   }
 

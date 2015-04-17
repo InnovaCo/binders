@@ -590,11 +590,14 @@ private trait BinderImplementation {
 
     val annotation = symbol.annotations.find(a => a.tpe == typeOf[eu.inn.binders.annotations.fieldName])
     val (fieldName,useConverter) = annotation.map { a =>
-      (a.tree.children.tail.head match {
+      /*a.scalaArgs.foreach(x =>
+        println(s"${x.getClass}/$x")
+      )*/
+      (a.scalaArgs.head match {
         case Literal(Constant(s:String)) => s
         case _ => symbol.name.decoded
       },
-      a.tree.children.tail.tail.head match {
+        a.scalaArgs.tail.head match {
         case Literal(Constant(b:Boolean)) => b
         case _ => false
       })
