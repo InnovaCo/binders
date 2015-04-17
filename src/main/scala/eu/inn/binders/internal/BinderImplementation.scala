@@ -358,7 +358,7 @@ private trait BinderImplementation {
   }
 
   protected def extractTypeArgs(tpe: Type): List[TypeTree] = {
-    tpe match {
+    tpe.normalize match {
       case TypeRef(_, _, args) => args.map(TypeTree(_))
       case _ =>
         c.abort(c.enclosingPosition, s"Can't extract typeArgs from $tpe")

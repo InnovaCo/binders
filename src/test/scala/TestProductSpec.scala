@@ -5,6 +5,11 @@ import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar.mock
 import org.scalatest.{FlatSpec, Matchers}
 
+object DefineType {
+  type CoolMap = Map[Long,String]
+  type StringMap = Map[String,String]
+}
+
 case class TestProduct(intValue1: Int, nullableValue: Option[Int], intValue2: Int)
 case class TestInnerProduct(inner: TestProduct, nullableInner: Option[TestProduct], nullableInner1: Option[TestProduct])
 case class TestProductAnnotated(@fieldName("f1Value") intValue1: Int, @fieldName("f2Value", true) intValue2: Int)

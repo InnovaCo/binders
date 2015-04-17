@@ -23,9 +23,16 @@ class TestCollectionsSpec extends FlatSpec with Matchers {
     m
   }
 
-  "Map[Int] " should " be bound" in {
+  "Map[Long] " should " be bound" in {
     val m = mock[TestSerializer[PlainConverter]]
     val map: Map[Long,String] = Map(1l -> "a", 2l -> "b")
+    m.bind(map)
+    verify(m).writeMap(Map(1l -> "a", 2l -> "b"))
+  }
+
+  "CoolMap = Map[Long,String] " should " be bound" in {
+    val m = mock[TestSerializer[PlainConverter]]
+    val map: DefineType.CoolMap = Map(1l -> "a", 2l -> "b")
     m.bind(map)
     verify(m).writeMap(Map(1l -> "a", 2l -> "b"))
   }

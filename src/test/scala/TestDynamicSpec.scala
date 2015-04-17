@@ -86,6 +86,15 @@ class TestDynamicSpec extends FlatSpec with Matchers {
     d1.asMap should equal (Map("a" -> Number(1), "b" -> Text("ho"), "c" -> Bool(true)))
   }
 
+  "fromDynamic " should " deserialize StringMap = Map[String,String] " in {
+    import eu.inn.binders.dynamic._
+    import DefineType._
+
+    val m = Obj(Map("a" -> Text("he"), "b" -> Text("ho")))
+    val map = m.fromDynamic[StringMap]
+    map should equal(Map("a"->"he", "b"->"ho"))
+  }
+
   "DynamicValue " should " allow selectDynamic " in {
     val d = Obj(Map("a" -> Number(1), "b" -> Text("ho"), "c" -> Bool(true), "_" -> Bool(false)))
     val a = d.a[Int]
