@@ -95,11 +95,11 @@ class TestDynamicSpec extends FlatSpec with Matchers {
     val b = d.b[String]
     b should equal("ho")
 
-    val bo = d.b[Option[String]]
+    /*val bo = d.b[Option[String]]
     bo should equal(Some("ho"))
 
     val x = d.x[Option[String]]
-    x should equal(None)
+    x should equal(None)*/
 
     val y = d.y[Option[Int]]
     y should equal(None)

@@ -587,11 +587,29 @@ private trait BinderImplementation {
   }
 
   protected def identToFieldName(symbol: c.Symbol, converter: Option[Converter]): Literal = {
+
+    val annotation = symbol.annotations.find(a => a.tpe == typeOf[eu.inn.binders.annotations.fieldName])
+    val (fieldName,useConverter) = annotation.map { a =>
+      (a.tree.children.tail.head match {
+        case Literal(Constant(s:String)) => s
+        case _ => symbol.name.decoded
+      },
+      a.tree.children.tail.tail.head match {
+        case Literal(Constant(b:Boolean)) => b
+        case _ => false
+      })
+    } getOrElse {
+      (symbol.name.decoded, true)
+    }
+    //println(s"anno: $fieldName $useConverter")
     Literal(Constant(
-      converter.map {
-        _.convert(symbol.name.decoded)
+      converter.map { c =>
+        if (useConverter)
+          c.convert(fieldName)
+        else
+          fieldName
       } getOrElse {
-        symbol.name.decoded
+        fieldName
       }
     ))
   }

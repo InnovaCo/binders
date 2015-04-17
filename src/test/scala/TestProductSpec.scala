@@ -1,4 +1,5 @@
 import eu.inn.binders._
+import eu.inn.binders.annotations.fieldName
 import eu.inn.binders.naming.{CamelCaseToSnakeCaseConverter, PlainConverter}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar.mock
@@ -6,9 +7,9 @@ import org.scalatest.{FlatSpec, Matchers}
 
 case class TestProduct(intValue1: Int, nullableValue: Option[Int], intValue2: Int)
 case class TestInnerProduct(inner: TestProduct, nullableInner: Option[TestProduct], nullableInner1: Option[TestProduct])
+case class TestProductAnnotated(@fieldName("f1Value") intValue1: Int, @fieldName("f2Value", true) intValue2: Int)
 
 class TestProductSpec extends FlatSpec with Matchers {
-
   "all case class fields " should " be serialized by names " in {
     val m = mock[TestSerializer[PlainConverter]]
     val m1 = mock[TestSerializer[PlainConverter]]
@@ -183,6 +184,28 @@ class TestProductSpec extends FlatSpec with Matchers {
       None,
       Some(TestProduct(123456, Some(555), 7890))
     ))
+  }
+
+  "annotated field " should " be serialized " in {
+
+    val m = mock[TestSerializer[CamelCaseToSnakeCaseConverter]]
+    val m1 = mock[TestSerializer[CamelCaseToSnakeCaseConverter]]
+    val m2 = mock[TestSerializer[CamelCaseToSnakeCaseConverter]]
+
+    when(m.getFieldSerializer("f1Value")).thenReturn(Some(m1))
+    when(m.getFieldSerializer("f2_value")).thenReturn(Some(m2))
+    when(m.getFieldSerializer("intValue1")).thenThrow(new RuntimeException("Ew"))
+    when(m.getFieldSerializer("intValue2")).thenThrow(new RuntimeException("Ew"))
+
+    m.bind(TestProductAnnotated(576, 90))
+
+    verify(m).getFieldSerializer("f1Value")
+    verify(m1).writeInt(576)
+    verifyNoMoreInteractions(m1)
+    verify(m).getFieldSerializer("f2_value")
+    verify(m2).writeInt(90)
+    verifyNoMoreInteractions(m2)
+    verifyNoMoreInteractions(m)
   }
 
   // todo: inner class serialization

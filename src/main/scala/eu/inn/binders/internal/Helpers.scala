@@ -5,6 +5,8 @@ import eu.inn.binders.dynamic._
 
 object Helpers {
   def getFieldOrThrow[T](x: Option[T], fieldName: String): T = {
+    if (x == null)
+      throw new FieldNotFoundException(fieldName)
     x.getOrElse(throw new FieldNotFoundException(fieldName))
   }
 
