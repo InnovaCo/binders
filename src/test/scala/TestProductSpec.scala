@@ -1,5 +1,6 @@
 import eu.inn.binders._
 import eu.inn.binders.annotations.fieldName
+import eu.inn.binders.core.BindOptions
 import eu.inn.binders.naming.{CamelCaseToSnakeCaseConverter, PlainConverter}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar.mock
@@ -85,6 +86,35 @@ class TestProductSpec extends FlatSpec with Matchers {
 
     verify(m).getFieldSerializer("nullableValue")
     verify(m).getFieldSerializer("intValue2")
+
+    verifyNoMoreInteractions(m)
+  }
+
+  "only! some case class fields " should " be serialized by names (skipOptionalFields=true)" in {
+
+    val m = mock[TestSerializer[CamelCaseToSnakeCaseConverter]]
+    val m1 = mock[TestSerializer[CamelCaseToSnakeCaseConverter]]
+    val m2 = mock[TestSerializer[CamelCaseToSnakeCaseConverter]]
+    val m3 = mock[TestSerializer[CamelCaseToSnakeCaseConverter]]
+
+    when(m.getFieldSerializer("int_value1")).thenReturn(Some(m1))
+    when(m.getFieldSerializer("nullable_value")).thenReturn(Some(m2))
+    when(m.getFieldSerializer("int_value2")).thenReturn(Some(m3))
+
+    implicit val op3: BindOptions = new BindOptions(true)
+    m.bind(TestProduct(888666777, None, 7890))
+
+    verify(m).getFieldSerializer("int_value1")
+    verify(m1).writeInt(888666777)
+    verifyNoMoreInteractions(m1)
+
+    //verify(m).getFieldSerializer("nullable_value")
+    //verify(m2).writeIntNullable(Some(555))
+    verifyNoMoreInteractions(m2)
+
+    verify(m).getFieldSerializer("int_value2")
+    verify(m3).writeInt(7890)
+    verifyNoMoreInteractions(m3)
 
     verifyNoMoreInteractions(m)
   }

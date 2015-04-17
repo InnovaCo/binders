@@ -96,10 +96,15 @@ private trait BinderImplementation {
 
     val listOfCalls: List[Tree] = caseClassParams.map { parameter =>
       val fieldName = identToFieldName(parameter, converter)
-      if (partial)
-        q"tx.serializer.getFieldSerializer($fieldName).map(_.bind(o.${newTermName(parameter.name.toString)}))"
+      val q =
+        if (partial)
+          q"tx.serializer.getFieldSerializer($fieldName).map(_.bind(o.${newTermName(parameter.name.toString)}))"
+        else
+          q"getFieldOrThrow(tx.serializer.getFieldSerializer($fieldName), $fieldName).bind(o.${newTermName(parameter.name.toString)})"
+      if (parameter.typeSignature <:< typeOf[Option[_]])
+        q"if (o.${newTermName(parameter.name.toString)}.isDefined || !eu.inn.binders.core.BindOptions.get.skipOptionalFields){$q}"
       else
-        q"getFieldOrThrow(tx.serializer.getFieldSerializer($fieldName), $fieldName).bind(o.${newTermName(parameter.name.toString)})"
+        q
     }
 
     val block = q"""{

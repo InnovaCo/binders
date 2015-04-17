@@ -21,3 +21,4 @@ package object binders {
     def unbindPartial[O](originalValue: O): O = macro BinderProxy.unbindPartial[D, O]
   }
 }
+
