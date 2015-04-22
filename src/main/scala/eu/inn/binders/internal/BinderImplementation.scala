@@ -593,7 +593,7 @@ private trait BinderImplementation {
 
   protected def identToFieldName(symbol: c.Symbol, converter: Option[Converter]): Literal = {
 
-    val annotation = symbol.annotations.find(a => a.tpe == typeOf[eu.inn.binders.annotations.fieldName])
+    val annotation = symbol.annotations.find(a => a.tpe == typeOf[eu.inn.binders.annotations.FieldNameMarker])
     val (fieldName,useConverter) = annotation.map { a =>
       /*a.scalaArgs.foreach(x =>
         println(s"${x.getClass}/$x")
