@@ -102,11 +102,11 @@ case class Text(v: String) extends Value {
   override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitText(this)
 }
 
-case class Obj(v: Map[String, Value]) extends Value{
+case class Obj(v: Map[String, Value] = Map()) extends Value{
   override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitObj(this)
 }
 
-case class Lst(v: Seq[Value]) extends Value{
+case class Lst(v: Seq[Value] = Seq()) extends Value{
   override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitLst(this)
 }
 
