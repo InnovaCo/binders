@@ -13,9 +13,9 @@ trait ValueSerializerBaseTrait[C <: Converter] extends Serializer[C] {
 }
 
 class ValueSerializerBase[C <: Converter, F <: ValueSerializerBaseTrait[C]] extends ValueSerializerBaseTrait[C]{
-  var value: Value = null
-  var map: scala.collection.mutable.Map[String, ValueSerializerBaseTrait[C]] = null
-  var seq: scala.collection.mutable.ArrayBuffer[Value] = null
+  protected var value: Value = null
+  protected var map: scala.collection.mutable.Map[String, ValueSerializerBaseTrait[C]] = null
+  protected var seq: scala.collection.mutable.ArrayBuffer[Value] = null
 
   def getFieldSerializer(fieldName: String): Option[F] = {
     if (map == null) {
@@ -29,16 +29,16 @@ class ValueSerializerBase[C <: Converter, F <: ValueSerializerBaseTrait[C]] exte
 
   protected def createFieldSerializer(): F = ???
 
-  def writeNull() = writeDynamicObject(null)
+  def writeNull() = writeDynamicObject(Null)
 
-  def writeString(value: String) = writeDynamicObject(Text(value))
+  def writeString(value: String) = if(value == null) writeNull() else writeDynamicObject(Text(value))
   def writeBoolean(value: Boolean) = writeDynamicObject(Bool(value))
-  def writeBigDecimal(value: BigDecimal) = writeDynamicObject(Number(value))
+  def writeBigDecimal(value: BigDecimal) = if(value == null) writeNull() else writeDynamicObject(Number(value))
   def writeInt(value: Int) = writeDynamicObject(Number(value))
   def writeLong(value: Long) = writeDynamicObject(Number(value))
   def writeFloat(value: Float) = writeDynamicObject(Number(BigDecimal(value)))
   def writeDouble(value: Double) = writeDynamicObject(Number(value))
-  def writeDate(value: Date) = writeDynamicObject(Number(value.getTime))
+  def writeDate(value: Date) = if(value == null) writeNull() else writeDynamicObject(Number(value.getTime))
 
   def writeDynamicObject(value: Value): Unit = {
     if (seq != null)

@@ -21,7 +21,7 @@ class ValueDeserializerBase[C <: Converter, I <: Deserializer[C]] (value: Value,
 
   protected def createFieldDeserializer(value: Value, fieldName: Option[String]): I = ???
   
-  def isNull: Boolean = value == null // todo: None?
+  def isNull: Boolean = value == null || value == Null
   def readString(): String = value.asString
   def readInt(): Int = value.asInt
   def readLong(): Long = value.asLong

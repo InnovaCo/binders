@@ -50,6 +50,20 @@ class TestDynamicSpec extends FlatSpec with Matchers {
     assert (i1 == "ho")
   }
 
+  "toDynamic " should " serialize null " in {
+    import eu.inn.binders.dynamic._
+    val i1: String = null
+    val d1 = i1.toDynamic
+    assert (d1 == Null)
+  }
+
+  "fromDynamic " should " deserialize null " in {
+    import eu.inn.binders.dynamic._
+    val d1 = Null
+    val i1 = d1.fromDynamic[Option[String]]
+    assert (i1.isEmpty)
+  }
+
   "toDynamic " should " serialize Seq[Int] " in {
     import eu.inn.binders.dynamic._
     val i1 = Seq(1,2,3)

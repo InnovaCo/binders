@@ -15,6 +15,7 @@ trait Value extends Dynamic {
       override def visitObj(d: Obj) = d.v.map(kv => kv._1 + "->" + kv._2).mkString(",")
       override def visitNumber(d: Number) = d.v.toString()
       override def visitLst(d: Lst) = d.v.mkString(",")
+      override def visitNull(): String = ""
     })
   }
 
@@ -37,6 +38,7 @@ trait Value extends Dynamic {
       override def visitObj(d: Obj) = castUnavailable("Obj to Boolean")
       override def visitNumber(d: Number) = d.v != BigDecimal(0)
       override def visitLst(d: Lst) = castUnavailable("Lst to Boolean")
+      override def visitNull(): Boolean = false
     })
   }
 
@@ -47,6 +49,7 @@ trait Value extends Dynamic {
       override def visitObj(d: Obj) = castUnavailable("Obj to BigDecimal")
       override def visitNumber(d: Number) = d.v
       override def visitLst(d: Lst) = castUnavailable("Lst to BigDecimal")
+      override def visitNull(): BigDecimal = 0
     })
   }
 
@@ -63,6 +66,7 @@ trait Value extends Dynamic {
       override def visitObj(d: Obj) = d.v
       override def visitNumber(d: Number) = castUnavailable("Number to Map[]")
       override def visitLst(d: Lst) = castUnavailable("Lst to Map[]")
+      override def visitNull() = Map()
     })
   }
 
@@ -73,6 +77,31 @@ trait Value extends Dynamic {
       override def visitObj(d: Obj) = castUnavailable("Obj to Seq[]")
       override def visitNumber(d: Number) = castUnavailable("Number to Seq[]")
       override def visitLst(d: Lst) = d.v
+      override def visitNull() = Seq()
+    })
+  }
+
+  def isDefined: Boolean = !isNull
+
+  def isNull: Boolean = {
+    accept[Boolean](new ValueVisitor[Boolean] {
+      override def visitBool(d: Bool) = false
+      override def visitText(d: Text) = false
+      override def visitObj(d: Obj) = false
+      override def visitNumber(d: Number) = false
+      override def visitLst(d: Lst) = false
+      override def visitNull() = true
+    })
+  }
+
+  def isEmpty: Boolean = {
+    accept[Boolean](new ValueVisitor[Boolean] {
+      override def visitBool(d: Bool) = false
+      override def visitText(d: Text) = d.v.isEmpty
+      override def visitObj(d: Obj) = d.v.isEmpty
+      override def visitNumber(d: Number) = false
+      override def visitLst(d: Lst) = d.v.isEmpty
+      override def visitNull() = true
     })
   }
 
@@ -87,12 +116,12 @@ trait ValueVisitor[T] {
   def visitObj(d: Obj): T
   def visitLst(d: Lst): T
   def visitBool(d: Bool): T
-//  def visitNull()
+  def visitNull(): T
 }
 
-/*case object Null extends DynamicValue {
-  override def accept(visitor: DynamicVisitor): Unit = visitor.visitNull()
-}*/
+case object Null extends Value {
+  override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitNull()
+}
 
 case class Number(v: BigDecimal) extends Value {
   override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitNumber(this)

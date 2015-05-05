@@ -1,5 +1,7 @@
 package eu.inn.binders.internal
 
+import eu.inn.binders.dynamic.Value
+
 import scala.collection.SeqLike
 import scala.language.reflectiveCalls
 import scala.reflect.macros.Context
@@ -17,7 +19,7 @@ private [binders] trait BinderImplementation {
     val writer = findWriter(writers, tpe)
 
     val block =
-    if (!writer.isDefined) {
+    if (writer.isEmpty) {
       if (tpe <:< typeOf[Option[_]]){
         bindOption[S, O](value)
       }else
@@ -101,7 +103,7 @@ private [binders] trait BinderImplementation {
           q"tx.serializer.getFieldSerializer($fieldName).map(_.bind(o.${newTermName(parameter.name.toString)}))"
         else
           q"getFieldOrThrow(tx.serializer.getFieldSerializer($fieldName), $fieldName).bind(o.${newTermName(parameter.name.toString)})"
-      if (parameter.typeSignature <:< typeOf[Option[_]])
+      if (parameter.typeSignature <:< typeOf[Option[_]] || parameter.typeSignature <:< typeOf[Value])
         q"if (o.${newTermName(parameter.name.toString)}.isDefined || !eu.inn.binders.core.BindOptions.get.skipOptionalFields){$q}"
       else
         q
@@ -293,6 +295,8 @@ private [binders] trait BinderImplementation {
         // _3
         if (parameter.typeSignature <:< typeOf[Option[_]])
           q"$varName.flatten"
+        else if (parameter.typeSignature <:< typeOf[Value])
+          q"$varName.getOrElse(eu.inn.binders.dynamic.Null)"
         else
           q"$varName.getOrElse(throw new eu.inn.binders.core.FieldNotFoundException($fieldName))"
       )
