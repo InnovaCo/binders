@@ -1,7 +1,7 @@
 
 
 import eu.inn.binders.core.FieldNotFoundException
-import eu.inn.binders.dynamic.{Number, DynamicValue}
+import eu.inn.binders.dynamic.{Number, Value}
 import org.scalatest._
 import eu.inn.binders.dynamic._
 

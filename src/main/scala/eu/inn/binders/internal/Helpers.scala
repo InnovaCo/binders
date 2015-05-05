@@ -10,8 +10,8 @@ object Helpers {
     x.getOrElse(throw new FieldNotFoundException(fieldName))
   }
 
-  def getConformity(typ:String, value: DynamicValue): Int= {
-    value.accept(new DynamicVisitor[Int] {
+  def getConformity(typ:String, value: Value): Int= {
+    value.accept(new ValueVisitor[Int] {
       override def visitNumber(d: Number): Int = if (typ == "Number") return 100 else 0
       override def visitBool(d: Bool): Int = if (typ == "Bool") return 100 else 0
       override def visitObj(d: Obj): Int = if (typ == "Obj") return 100 else 0

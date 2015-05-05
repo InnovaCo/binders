@@ -1,19 +1,19 @@
 package eu.inn.binders.dynamic.internal
 
-import eu.inn.binders.dynamic.DynamicValue
+import eu.inn.binders.dynamic.Value
 
 import scala.language.experimental.macros
 import scala.language.reflectiveCalls
 import scala.reflect.macros.Context
 
-trait DynamicMacroImpl {
+private [dynamic] trait DynamicMacroImpl {
   val c: Context
   import c.universe._
 
   def fromDynamic[O: c.WeakTypeTag]: c.Tree = {
     val block = q"""{
       val t = ${c.prefix.tree}
-      DynamicSerializerFactory.findFactory().withDeserializer[${weakTypeOf[O]}](t.dynamic, deserializer=> {
+      ValueSerializerFactory.findFactory().withDeserializer[${weakTypeOf[O]}](t.value, deserializer=> {
         deserializer.unbind[${weakTypeOf[O]}]
       })
     }"""
@@ -24,7 +24,7 @@ trait DynamicMacroImpl {
   def toDynamic[O: c.WeakTypeTag]: c.Tree = {
     val block = q"""{
       val t = ${c.prefix.tree}
-      DynamicSerializerFactory.findFactory().withSerializer(serializer=> {
+      ValueSerializerFactory.findFactory().withSerializer(serializer=> {
         serializer.bind[${weakTypeOf[O]}](t.obj)
       })
     }"""

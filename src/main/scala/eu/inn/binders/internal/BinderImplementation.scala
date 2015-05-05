@@ -1,4 +1,4 @@
-package eu.inn.internal
+package eu.inn.binders.internal
 
 import scala.collection.SeqLike
 import scala.language.reflectiveCalls
@@ -6,7 +6,7 @@ import scala.reflect.macros.Context
 import language.experimental.macros
 import eu.inn.binders.naming.Converter
 
-private trait BinderImplementation {
+private [binders] trait BinderImplementation {
   val c: Context
 
   import c.universe._
@@ -213,7 +213,7 @@ private trait BinderImplementation {
       val too = ${c.prefix.tree}
       import eu.inn.binders.dynamic._
       import scala.util._
-      val value = too.deserializer.unbind[DynamicValue]
+      val value = too.deserializer.unbind[eu.inn.binders.dynamic.Value]
       val leftIsBetter = eu.inn.binders.internal.Helpers.getConformity($leftDStr,value) >=
         eu.inn.binders.internal.Helpers.getConformity($rightDStr,value)
 

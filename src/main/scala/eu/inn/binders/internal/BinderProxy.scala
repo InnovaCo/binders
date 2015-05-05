@@ -1,10 +1,10 @@
-package eu.inn.internal
+package eu.inn.binders.internal
 
 import scala.language.reflectiveCalls
 import scala.reflect.macros.Context
 import language.experimental.macros
 
-object BinderProxy {
+private [binders] object BinderProxy {
 
   def bind[S: c.WeakTypeTag, O: c.WeakTypeTag]
   (c: Context)

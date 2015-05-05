@@ -1,11 +1,11 @@
 package eu.inn
 
 import eu.inn.binders.core.{Serializer, Deserializer}
+import eu.inn.binders.internal.BinderProxy
+
+import language.experimental.macros
 
 package object binders {
-
-  import eu.inn.internal.BinderProxy
-  import language.experimental.macros
 
   implicit class SerializerOps[S <: Serializer[_]](val serializer: S) {
     def bind[O](value: O): S = macro BinderProxy.bind[S, O]
