@@ -1,5 +1,9 @@
 language: scala
 scala:
-- 2.11.4
-- 2.10.4
-
+- 2.11.6
+- 2.10.5
+env:
+  global:
+  - secure: GQFxH61NbaLi5Vdo/AFLtvo0Fyo/dk8j+ZLuWOSh7/EpmIwQAUXKTHUyWXpG1E8gfeJpZk9Semow0jnxnADiAxL+DTzkn3kzEDN11NJzFyR5Q50VM8J9w+UwMQ32Igxb6sIkkmlXH3hWDY9t+RA62EBNcGGA/EPm6Qg4sxvBpwU=
+  - secure: EUOsPyte1rAcN6BGJ7a8en62A+xNW8T8PagX8gYKQwkWTA++GBBvaQsCWOFBKLsyDHKplhbWfq3UuEdqloVMvZn1j7LIl8BgMQvWsk8S01kL7fCXJ2zRdwgIPnDt1rj2PKTSJSLflOF08dKCNn4kkkZK7k8qcdaFGtJSG/pwHX4=
+  - secure: cotvEuZLk4yey8yE1vzoIxFciImTOhIRfvblJJkTfDdZ+269e4BQnfGEaSCz0V3DksH6YYzVZhisFUAQy+dyQu+Z+4WtB/Tbs4EnC/DBPTtIe6U17+bXbWuj9sFAPdu/xVgKanmLMs+weEFFcVx88QrjTLYxs2yK+hKPppdD7No=
