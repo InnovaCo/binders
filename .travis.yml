@@ -9,4 +9,4 @@ env:
   - secure: cotvEuZLk4yey8yE1vzoIxFciImTOhIRfvblJJkTfDdZ+269e4BQnfGEaSCz0V3DksH6YYzVZhisFUAQy+dyQu+Z+4WtB/Tbs4EnC/DBPTtIe6U17+bXbWuj9sFAPdu/xVgKanmLMs+weEFFcVx88QrjTLYxs2yK+hKPppdD7No=
   - secure: LF6FpIn3WalHeV8lj+KUIgibvUYI1EtA/ddcshB+cLeU7VsM1UdblOEGnNopzyA42VlP/HZymGd4TaYa0xa+ewA94TKFj1xbKeiLMRjzxFtlHRFpoqQrW2d2C5ESSCktEh0BAXLZoe4Abo1m/+zr9oeEf6aQGZmfLmudYd8Fgr8=
 after_success:
-- test $TRAVIS_PULL_REQUEST == "false" && test $TRAVIS_BRANCH == "master" && bash -e "$TRAVIS_BUILD_DIR/travis/build.sh"
+  - bash -e "$TRAVIS_BUILD_DIR/travis/build.sh"
