@@ -4,8 +4,7 @@ scala:
 - 2.10.4
 env:
   global:
-  - secure: GQFxH61NbaLi5Vdo/AFLtvo0Fyo/dk8j+ZLuWOSh7/EpmIwQAUXKTHUyWXpG1E8gfeJpZk9Semow0jnxnADiAxL+DTzkn3kzEDN11NJzFyR5Q50VM8J9w+UwMQ32Igxb6sIkkmlXH3hWDY9t+RA62EBNcGGA/EPm6Qg4sxvBpwU=
-  - secure: EUOsPyte1rAcN6BGJ7a8en62A+xNW8T8PagX8gYKQwkWTA++GBBvaQsCWOFBKLsyDHKplhbWfq3UuEdqloVMvZn1j7LIl8BgMQvWsk8S01kL7fCXJ2zRdwgIPnDt1rj2PKTSJSLflOF08dKCNn4kkkZK7k8qcdaFGtJSG/pwHX4=
-  - secure: cotvEuZLk4yey8yE1vzoIxFciImTOhIRfvblJJkTfDdZ+269e4BQnfGEaSCz0V3DksH6YYzVZhisFUAQy+dyQu+Z+4WtB/Tbs4EnC/DBPTtIe6U17+bXbWuj9sFAPdu/xVgKanmLMs+weEFFcVx88QrjTLYxs2yK+hKPppdD7No=
-  - secure: LF6FpIn3WalHeV8lj+KUIgibvUYI1EtA/ddcshB+cLeU7VsM1UdblOEGnNopzyA42VlP/HZymGd4TaYa0xa+ewA94TKFj1xbKeiLMRjzxFtlHRFpoqQrW2d2C5ESSCktEh0BAXLZoe4Abo1m/+zr9oeEf6aQGZmfLmudYd8Fgr8=
+  - secure: Q6bu8Rp2+HvnrGReNtmYxP2L6D3FoaxPpKWle79axrwFJiG0F6Hpp8erdACAeXguBiIr1vVYELlMZosxdKulJjDHV91U2uVF7GsPFdXZhQAUfwk9WLcMJxBz2reSA6LaLH92n+YMcGD95cAtfeCiSaha0v7js+5vNyWzfAlF1P8=
+  - secure: GERqiicWh/mZDbs0ARGHoBru9dPq034NwkVhXPbf6w1JE++cwWyHsQzHNPSoP9JBNXoonvo0yOCbWwXHd6flzwB9kujp2rtJndYbvHfTO/33BWFDlC3+Ckr2ysEi0GySYLg/e/BZKrdAdEH0+2rrvOBD1ng4jtTPE864vMxxxw8=
+  - secure: dqFb6xvGxactxLLDjMeiBwWtSOOAHsJhB1gLpIsSx3HmcuNAIwakw6iqYRp10ggJZfc86vq0ofBGMr+oG0IFOUSwE8co6KWaw2pzXX9BTeh2oSEIZltnvHNVKnyYDce9Pxs00yOUZgZG/IcBmYA9dWbnd1EeyufoyWQrg5iatEg=
 script: "$TRAVIS_BUILD_DIR/travis/build.sh"
