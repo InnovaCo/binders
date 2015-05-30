@@ -1,6 +1,6 @@
 package eu.inn
 
-import eu.inn.binders.core.{Serializer, Deserializer}
+import eu.inn.binders.core.{BindOptions, Serializer, Deserializer}
 import eu.inn.binders.internal.BinderProxy
 
 import language.experimental.macros

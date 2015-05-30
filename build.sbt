@@ -2,17 +2,13 @@ import sbt.Keys._
 
 name := "binders-core"
 
-version := "0.6-SNAPSHOT"
+version := "0.6"
 
 organization := "eu.inn"
 
 scalaVersion := "2.11.6"
 
 crossScalaVersions := Seq("2.11.6", "2.10.4")
-
-resolvers ++= Seq(
-    Resolver.typesafeRepo("releases")
-  )
 
 libraryDependencies += "org.mockito" % "mockito-all" % "1.10.19" % "test"
 
