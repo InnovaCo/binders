@@ -5,7 +5,7 @@ import eu.inn.binders.dynamic.internal.DynamicMacro
 import scala.language.experimental.macros
 import scala.language.dynamics
 
-trait Value extends Dynamic {
+trait Value extends Any with Dynamic {
   def accept[T](visitor: ValueVisitor[T]): T
 
   def asString: String = {
@@ -123,22 +123,22 @@ case object Null extends Value {
   override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitNull()
 }
 
-case class Number(v: BigDecimal) extends Value {
+case class Number(v: BigDecimal) extends AnyVal with Value {
   override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitNumber(this)
 }
 
-case class Text(v: String) extends Value {
+case class Text(v: String) extends AnyVal with Value {
   override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitText(this)
 }
 
-case class Obj(v: Map[String, Value] = Map()) extends Value{
+case class Obj(v: Map[String, Value] = Map()) extends AnyVal with Value{
   override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitObj(this)
 }
 
-case class Lst(v: Seq[Value] = Seq()) extends Value{
+case class Lst(v: Seq[Value] = Seq()) extends AnyVal with Value{
   override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitLst(this)
 }
 
-case class Bool(v: Boolean) extends Value{
+case class Bool(v: Boolean) extends AnyVal with Value{
   override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitBool(this)
 }
