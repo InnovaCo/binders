@@ -32,7 +32,7 @@ private [binders] trait BinderImplementation {
       else if (tpe <:< typeOf[TraversableOnce[_]]){
         bindTraversable[S, O](value)
       }
-      else if (tpe.companion != NoType){
+      else if (tpe.typeSymbol.companionSymbol != NoSymbol){
         bindObject[S, O](value, partial = false)
       }
       else
@@ -630,7 +630,7 @@ private [binders] trait BinderImplementation {
     val tpe = weakTypeOf[T]
     val converterTypeName = newTypeName("nameConverterType")
 
-    val converterTypeOption = tpe.baseClasses.map {
+    val converterTypeOption = tpe.baseClasses.flatMap {
       baseSymbol =>
         val baseType = tpe.baseType(baseSymbol)
         val ct = baseType.declaration(converterTypeName)
@@ -644,7 +644,7 @@ private [binders] trait BinderImplementation {
               c.abort(c.enclosingPosition, s"$tpe.nameConverterType: ${t} is not a valid Converter, please use PlainConverter if you don't need convert identifier names")
             }
         }
-    }.flatten.headOption
+    }.headOption
 
     converterTypeOption map { t =>
       // this is synchronized because of bug in scala
