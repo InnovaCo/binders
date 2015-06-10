@@ -29,11 +29,11 @@ private [binders] trait BinderImplementation {
       if (tpe <:< typeOf[Map[_,_]]){
         bindMap(value)
       }
-      else if (tpe <:< typeOf[Product]){
-        bindObject[S, O](value, partial = false)
-      }
       else if (tpe <:< typeOf[TraversableOnce[_]]){
         bindTraversable[S, O](value)
+      }
+      else if (tpe.companion != NoType){
+        bindObject[S, O](value, partial = false)
       }
       else
         c.abort(c.enclosingPosition, s"No write function found for parameter with type $tpe in ${weakTypeOf[S]}")

@@ -15,6 +15,18 @@ case class TestProduct(intValue1: Int, nullableValue: Option[Int], intValue2: In
 case class TestInnerProduct(inner: TestProduct, nullableInner: Option[TestProduct], nullableInner1: Option[TestProduct])
 case class TestProductAnnotated(@fieldName("f1Value") intValue1: Int, @fieldName("f2Value", true) intValue2: Int)
 
+trait TestTrait {
+  def intValue: Int
+  def stringValue: String
+}
+
+object TestTrait {
+  def apply(intValue: Int, stringValue: String): TestTrait = TraitContainer(intValue, stringValue)
+  def unapply(t: TestTrait) = Some((t.intValue, t.stringValue))
+}
+
+case class TraitContainer(intValue: Int, stringValue: String) extends TestTrait
+
 class TestProductSpec extends FlatSpec with Matchers {
   "all case class fields " should " be serialized by names " in {
     val m = mock[TestSerializer[PlainConverter]]
@@ -270,5 +282,45 @@ class TestProductSpec extends FlatSpec with Matchers {
     verifyNoMoreInteractions(m)
   }
 
+  "trait fields " should " be serialized" in {
+    val m = mock[TestSerializer[PlainConverter]]
+    val m1 = mock[TestSerializer[PlainConverter]]
+    val m2 = mock[TestSerializer[PlainConverter]]
+
+    when(m.getFieldSerializer("intValue")).thenReturn(Some(m1))
+    when(m.getFieldSerializer("stringValue")).thenReturn(Some(m2))
+
+    m.bind(TestTrait(123456, "abc"))
+
+    verify(m).getFieldSerializer("intValue")
+    verify(m1).writeInt(123456)
+    verifyNoMoreInteractions(m1)
+
+    verify(m).getFieldSerializer("stringValue")
+    verify(m2).writeString("abc")
+    verifyNoMoreInteractions(m2)
+
+    verifyNoMoreInteractions(m)
+  }
+
+  "trait fields " should " be deserialized" in {
+    val m = mock[TestDeserializer[PlainConverter]]
+
+    val m1 = mock[TestDeserializer[PlainConverter]]
+    when(m1.fieldName).thenReturn(Some("intValue"))
+    when(m1.readInt()).thenReturn(123456)
+
+    val m2 = mock[TestDeserializer[PlainConverter]]
+    when(m2.fieldName).thenReturn(Some("stringValue"))
+    when(m2.readString()).thenReturn("abc")
+
+    val mi = List(m1,m2)
+    when(m.iterator()).thenReturn(mi.toIterator)
+
+    val t = m.unbind[TestTrait]
+    assert(t.intValue == 123456)
+    assert(t.stringValue == "abc")
+    assert(t === TestTrait(123456, "abc"))
+  }
   // todo: inner class serialization
 }
