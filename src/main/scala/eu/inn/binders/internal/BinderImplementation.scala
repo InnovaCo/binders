@@ -293,7 +293,6 @@ private [binders] trait BinderImplementation {
         // _2
         if (defaultValueTree.isDefined) {
           cq"""$fieldName => {
-            println("unbinding: " + ${Literal(Constant(parameter.fullName))})
             $varName = i.unbind[Option[${parameter.typeSignature}]]
           }"""
         } else {
