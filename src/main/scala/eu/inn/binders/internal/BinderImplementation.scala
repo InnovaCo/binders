@@ -275,14 +275,12 @@ private [binders] trait BinderImplementation {
   def unbindObject[D: c.WeakTypeTag, O: c.WeakTypeTag](partial: Boolean, originalValue: c.Tree): c.Tree = {
     val converter = findConverter[D]
     val caseClassParams = extractCaseClassParams[O]
+    val companionSymbol = weakTypeOf[O].typeSymbol.companionSymbol
 
-    val vars = caseClassParams.map { parameter =>
+    val vars = caseClassParams.zipWithIndex.map { case (parameter, index) =>
       val varName = newTermName("i_" + parameter.name.decoded)
       val fieldName = identToFieldName(parameter, converter)
-      val defaultValueTree = parameter.annotations.find(a => a.tpe == typeOf[eu.inn.binders.annotations.defaultValue]) map {
-        annotation ⇒
-          annotation.scalaArgs.head
-      }
+
       (
         // _1
         if (partial)
@@ -291,7 +289,7 @@ private [binders] trait BinderImplementation {
           q"var $varName : Option[${parameter.typeSignature}] = None",
 
         // _2
-        if (defaultValueTree.isDefined) {
+        if (parameter.asTerm.isParamWithDefault) {
           cq"""$fieldName => {
             $varName = i.unbind[Option[${parameter.typeSignature}]]
           }"""
@@ -302,18 +300,17 @@ private [binders] trait BinderImplementation {
         },
 
         // _3
-        if (defaultValueTree.isDefined) {
-          q"$varName.getOrElse(${defaultValueTree.get})"
+        if (parameter.asTerm.isParamWithDefault) {
+          val defVal = newTermName("apply$default$" + (index + 1))
+          q"$parameter = $varName.getOrElse($companionSymbol.$defVal)"
         } else if (parameter.typeSignature <:< typeOf[Option[_]])
-          q"$varName.flatten"
+          q"$parameter = $varName.flatten"
         else if (parameter.typeSignature <:< typeOf[Value])
-          q"$varName.getOrElse(eu.inn.binders.dynamic.Null)"
+          q"$parameter = $varName.getOrElse(eu.inn.binders.dynamic.Null)"
         else
-          q"$varName.getOrElse(throw new eu.inn.binders.core.FieldNotFoundException($fieldName))"
+          q"$parameter = $varName.getOrElse(throw new eu.inn.binders.core.FieldNotFoundException($fieldName))"
       )
     }
-
-    val outputCompanionSymbol = weakTypeOf[O].typeSymbol.companionSymbol
 
     val block = q"""{
       val tpi = ${c.prefix.tree}
@@ -330,7 +327,7 @@ private [binders] trait BinderImplementation {
         }
       }
 
-      $outputCompanionSymbol(
+      $companionSymbol(
         ..${vars.map(_._3)}
       )
     }"""

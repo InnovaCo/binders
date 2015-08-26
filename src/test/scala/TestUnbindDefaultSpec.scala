@@ -1,14 +1,13 @@
 import eu.inn.binders._
-import eu.inn.binders.annotations.defaultValue
 import eu.inn.binders.core.BindersException
 import eu.inn.binders.naming.PlainConverter
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar.mock
 import org.scalatest.{FlatSpec, Matchers}
 
-case class TestDefault(@defaultValue(123456) intValue: Int,
-                       @defaultValue(789) intValue2: Int,
-                       @defaultValue("abc") stringValue: String)
+case class TestDefault(intValue: Int = 123456,
+                       intValue2: Int = 789,
+                       stringValue: String = "abc")
 
 class TestUnbindDefaultSpec extends FlatSpec with Matchers {
   val m = mock[TestDeserializer[PlainConverter]]
