@@ -8,7 +8,7 @@ organization := "eu.inn"
 
 scalaVersion := "2.11.6"
 
-crossScalaVersions := Seq("2.11.7", "2.10.4")
+crossScalaVersions := Seq("2.11.7", "2.10.5")
 
 libraryDependencies += "org.mockito" % "mockito-all" % "1.10.19" % "test"
 
@@ -24,7 +24,7 @@ libraryDependencies := {
     // in Scala 2.10, quasiquotes are provided by macro paradise
     case Some((2, 10)) =>
       libraryDependencies.value ++ Seq(
-        compilerPlugin("org.scalamacros" % "paradise" % "2.0.0" cross CrossVersion.full),
-        "org.scalamacros" %% "quasiquotes" % "2.0.0" cross CrossVersion.binary)
+        compilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M5" cross CrossVersion.full),
+        "org.scalamacros" %% "quasiquotes" % "2.1.0-M5" cross CrossVersion.binary)
   }
 }
