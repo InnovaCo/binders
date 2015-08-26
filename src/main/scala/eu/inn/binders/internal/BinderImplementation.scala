@@ -157,10 +157,10 @@ private [binders] trait BinderImplementation {
     val reader = findReader(readers, tpe)
     //println("reader: " + reader)
     val block =
-      reader.map { g =>
+      reader.map { readerMethod =>
         q"""{
           val tu = ${c.prefix.tree}
-          ${makeReaderWriterCall(q"tu.deserializer", g)}
+          ${makeReaderWriterCall(q"tu.deserializer", readerMethod)}
         }"""
       } getOrElse {
         val companionType = tpe.typeSymbol.companionSymbol.typeSignature
@@ -279,6 +279,10 @@ private [binders] trait BinderImplementation {
     val vars = caseClassParams.map { parameter =>
       val varName = newTermName("i_" + parameter.name.decoded)
       val fieldName = identToFieldName(parameter, converter)
+      val defaultValueTree = parameter.annotations.find(a => a.tpe == typeOf[eu.inn.binders.annotations.defaultValue]) map {
+        annotation ⇒
+          annotation.scalaArgs.head
+      }
       (
         // _1
         if (partial)
@@ -287,13 +291,21 @@ private [binders] trait BinderImplementation {
           q"var $varName : Option[${parameter.typeSignature}] = None",
 
         // _2
-        cq"""$fieldName => {
-            val v = i.unbind[${parameter.typeSignature}]
-            $varName = Some(v)
-          }""",
+        if (defaultValueTree.isDefined) {
+          cq"""$fieldName => {
+            println("unbinding: " + ${Literal(Constant(parameter.fullName))})
+            $varName = i.unbind[Option[${parameter.typeSignature}]]
+          }"""
+        } else {
+          cq"""$fieldName => {
+            $varName = Some(i.unbind[${parameter.typeSignature}])
+          }"""
+        },
 
         // _3
-        if (parameter.typeSignature <:< typeOf[Option[_]])
+        if (defaultValueTree.isDefined) {
+          q"$varName.getOrElse(${defaultValueTree.get})"
+        } else if (parameter.typeSignature <:< typeOf[Option[_]])
           q"$varName.flatten"
         else if (parameter.typeSignature <:< typeOf[Value])
           q"$varName.getOrElse(eu.inn.binders.dynamic.Null)"
@@ -304,9 +316,9 @@ private [binders] trait BinderImplementation {
 
     val outputCompanionSymbol = weakTypeOf[O].typeSymbol.companionSymbol
 
-    q"""{
+    val block = q"""{
       val tpi = ${c.prefix.tree}
-      ${if (partial) { q"val orig = ${originalValue}" } else q""}
+      ${if (partial) { q"val orig = $originalValue" } else q""}
       ..${vars.map(_._1)}
       tpi.deserializer.iterator().foreach{i =>
         i.fieldName.map { fieldName =>
@@ -315,13 +327,16 @@ private [binders] trait BinderImplementation {
             case _ => { /*todo: implement smart deserialization*/ }
           }
         } getOrElse {
-          throw new eu.inn.binders.core.BindersException("Iterator didn't return fieldName")
+          throw new eu.inn.binders.core.BindersException("Can't deserialize object: iterator didn't return fieldName")
         }
       }
-      ${outputCompanionSymbol}(
+
+      $outputCompanionSymbol(
         ..${vars.map(_._3)}
       )
     }"""
+    //println(block)
+    block
   }
 
   def unbindMap[O: c.WeakTypeTag]: c.Tree = {
