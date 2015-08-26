@@ -8,7 +8,7 @@ organization := "eu.inn"
 
 scalaVersion := "2.11.6"
 
-crossScalaVersions := Seq("2.11.6", "2.10.4")
+crossScalaVersions := Seq("2.11.7", "2.10.4")
 
 libraryDependencies += "org.mockito" % "mockito-all" % "1.10.19" % "test"
 
