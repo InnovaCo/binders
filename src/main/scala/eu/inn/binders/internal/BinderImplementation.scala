@@ -586,7 +586,7 @@ private [binders] trait BinderImplementation {
           case NoSymbol => c.abort(c.enclosingPosition, "No apply function found")
           case s =>
             // searches apply method corresponding to unapply
-            val applies = s.asMethod.alternatives
+            val applies = s.asTerm.alternatives
             val apply = applies.collectFirst {
               case (apply: MethodSymbol) if (apply.paramss.headOption.map(_.map(_.asTerm.typeSignature)) == unapplyReturnTypes) => apply
             }
