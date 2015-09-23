@@ -11,10 +11,11 @@ private [dynamic] trait DynamicMacroImpl {
   import c.universe._
 
   def fromDynamic[O: c.WeakTypeTag]: c.Tree = {
+    val t = fresh("t")
     val block = q"""{
-      val t = ${c.prefix.tree}
-      ValueSerializerFactory.findFactory().withDeserializer[${weakTypeOf[O]}](t.value, deserializer=> {
-        deserializer.unbind[${weakTypeOf[O]}]
+      val $t = ${c.prefix.tree}
+      ValueSerializerFactory.findFactory().withDeserializer[${weakTypeOf[O]}]($t.value, dsrz$$666 => {
+        dsrz$$666.unbind[${weakTypeOf[O]}]
       })
     }"""
     //println(block)
@@ -22,10 +23,11 @@ private [dynamic] trait DynamicMacroImpl {
   }
 
   def toDynamic[O: c.WeakTypeTag]: c.Tree = {
+    val t = fresh("t")
     val block = q"""{
-      val t = ${c.prefix.tree}
-      ValueSerializerFactory.findFactory().withSerializer(serializer=> {
-        serializer.bind[${weakTypeOf[O]}](t.obj)
+      val $t = ${c.prefix.tree}
+      ValueSerializerFactory.findFactory().withSerializer((srlz$$666)=> {
+        srlz$$666.bind[${weakTypeOf[O]}]($t.obj)
       })
     }"""
     //println(block)
@@ -33,6 +35,7 @@ private [dynamic] trait DynamicMacroImpl {
   }
 
   def selectDynamic[O: c.WeakTypeTag](name: c.Expr[String]): c.Tree = {
+    val t = fresh("t")
     val Literal(Constant(defName: String)) = name.tree
     val fieldName = readerNameToField(defName)
     val tpe = weakTypeOf[O]
@@ -41,14 +44,14 @@ private [dynamic] trait DynamicMacroImpl {
     if (tpe <:< typeOf[Option[_]])
       q"""{
       import eu.inn.binders.dynamic._
-      val t = ${c.prefix.tree}
-      t.asMap.get($fieldName).map(_.fromDynamic[$tpe]).flatten
+      val $t = ${c.prefix.tree}
+      $t.asMap.get($fieldName).map(_.fromDynamic[$tpe]).flatten
       }"""
     else
       q"""{
       import eu.inn.binders.dynamic._
-      val t = ${c.prefix.tree}
-      t.asMap.get($fieldName).map(_.fromDynamic[$tpe]).getOrElse(throw new eu.inn.binders.core.FieldNotFoundException($fieldName))
+      val $t = ${c.prefix.tree}
+      $t.asMap.get($fieldName).map(_.fromDynamic[$tpe]).getOrElse(throw new eu.inn.binders.core.FieldNotFoundException($fieldName))
       }"""
     //println(block)
     block
@@ -59,4 +62,6 @@ private [dynamic] trait DynamicMacroImpl {
   } else {
     readerName
   }
+
+  def fresh(prefix: String): TermName = newTermName(c.fresh(prefix))
 }

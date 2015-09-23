@@ -15,13 +15,18 @@ private [binders] trait BinderImplementation {
   import c.universe._
 
   def bind[S: c.WeakTypeTag , O: c.WeakTypeTag](value: c.Tree): c.Tree = {
+    val serOps = fresh("serOps")
+
     val customSerializer = c.inferImplicitValue(weakTypeOf[ImplicitSerializer[O,_]])
     val block =
     if (!customSerializer.isEmpty) {
+      //c.universe.build.freshTypeName()
+
+      //val ident =
       q"""{
-        val t = ${c.prefix.tree}
-        $customSerializer.write(t.serializer, $value)
-        t.serializer
+        val $serOps = ${c.prefix.tree}
+        $customSerializer.write($serOps.serializer, $value)
+        $serOps.serializer
       }"""
     }
     else {
@@ -49,9 +54,9 @@ private [binders] trait BinderImplementation {
       }
       else {
         q"""{
-          val t = ${c.prefix.tree}
-          ${makeReaderWriterCall(q"t.serializer", writer.get, List(value))}
-          t.serializer
+          val $serOps = ${c.prefix.tree}
+          ${makeReaderWriterCall(q"$serOps.serializer", writer.get, List(value))}
+          $serOps.serializer
           }"""
       }
     }
@@ -61,13 +66,14 @@ private [binders] trait BinderImplementation {
   }
 
   def bindArgs[S: c.WeakTypeTag](args: Seq[c.Tree]): c.Tree = {
-    val bindList = args.map(arg => q"ta.serializer.bind($arg)")
+    val serOps = fresh("serOps")
+    val bindList = args.map(arg => q"$serOps.serializer.bind($arg)")
     val block = q"""{
-      val ta = ${c.prefix.tree}
-      ${callIfExists[S](q"ta.serializer", "beginArgs")}
+      val $serOps = ${c.prefix.tree}
+      ${callIfExists[S](q"$serOps.serializer", "beginArgs")}
       ..$bindList
-      ${callIfExists[S](q"ta.serializer", "endArgs")}
-      ta.serializer
+      ${callIfExists[S](q"$serOps.serializer", "endArgs")}
+      $serOps.serializer
       }"""
 
     // println(block)
@@ -75,35 +81,37 @@ private [binders] trait BinderImplementation {
   }
 
   def bindOption[S: c.WeakTypeTag, O: c.WeakTypeTag](value: c.Tree): c.Tree = {
+    val serOps = fresh("serOps")
     val block = q"""{
-      val to = ${c.prefix.tree}
-      val o = $value
-      o.map {
-        ov => to.serializer.bind(ov)
-      } getOrElse {
-        to.serializer.writeNull
+      val $serOps = ${c.prefix.tree}
+      $value.map($serOps.serializer.bind(_)).getOrElse {
+        $serOps.serializer.writeNull
       }
-      to.serializer.serializer
+      $serOps.serializer.serializer
       }"""
     //println(block)
     block
   }
 
   def bindEither[S: c.WeakTypeTag, O: c.WeakTypeTag](value: c.Tree): c.Tree = {
+    val serOps = fresh("serOps")
+    val left = fresh("left")
+    val right = fresh("right")
     val block = q"""{
-      val to = ${c.prefix.tree}
-      val o = $value
-      o match {
-        case Left(left) => to.serializer.bind(left)
-        case Right(right) => to.serializer.bind(right)
+      val $serOps = ${c.prefix.tree}
+      $value match {
+        case Left($left) => $serOps.serializer.bind($left)
+        case Right($right) => $serOps.serializer.bind($right)
       }
-      to.serializer.serializer
+      $serOps.serializer.serializer
       }"""
     //println(block)
     block
   }
 
   def bindObject[S: c.WeakTypeTag, O: c.WeakTypeTag](value: c.Tree, partial: Boolean): c.Tree = {
+    val serOps = fresh("serOps")
+    val o = fresh("o")
     val converter = findConverter[S]
     val caseClassParams = extractCaseClassParams[O]
 
@@ -111,64 +119,67 @@ private [binders] trait BinderImplementation {
       val fieldName = identToFieldName(parameter, converter)
       val q =
         if (partial)
-          q"tx.serializer.getFieldSerializer($fieldName).map(_.bind(o.${newTermName(parameter.name.toString)}))"
+          q"$serOps.serializer.getFieldSerializer($fieldName).map(_.bind($o.${newTermName(parameter.name.toString)}))"
         else
-          q"getFieldOrThrow(tx.serializer.getFieldSerializer($fieldName), $fieldName).bind(o.${newTermName(parameter.name.toString)})"
+          q"getFieldOrThrow($serOps.serializer.getFieldSerializer($fieldName), $fieldName).bind($o.${newTermName(parameter.name.toString)})"
       if (parameter.typeSignature <:< typeOf[Option[_]] || parameter.typeSignature <:< typeOf[Value])
-        q"if (o.${newTermName(parameter.name.toString)}.isDefined || !eu.inn.binders.core.BindOptions.get.skipOptionalFields){$q}"
+        q"if ($o.${newTermName(parameter.name.toString)}.isDefined || !eu.inn.binders.core.BindOptions.get.skipOptionalFields){$q}"
       else
         q
     }
 
     val block = q"""{
       import eu.inn.binders.internal.Helpers._
-      val tx = ${c.prefix.tree}
-      val o = $value
-      ${callIfExists[S](q"tx.serializer", "beginObject")}
+      val $serOps = ${c.prefix.tree}
+      val $o = $value
+      ${callIfExists[S](q"$serOps.serializer", "beginObject")}
       ..$listOfCalls
-      ${callIfExists[S](q"tx.serializer", "endObject")}
-      tx.serializer
+      ${callIfExists[S](q"$serOps.serializer", "endObject")}
+      $serOps.serializer
       }"""
     //println(block + " partial = " + partial)
     block
   }
 
   def bindTraversable[S : c.WeakTypeTag, O: c.WeakTypeTag](value: c.Tree): c.Tree = {
+    val serOps = fresh("serOps")
     val block = q"""{
-      val ts = ${c.prefix.tree}
-      val it = $value
-      ${callIfExists[S](q"ts.serializer", "beginArray")}
-      it.foreach(ts.bind(_))
-      ${callIfExists[S](q"ts.serializer", "endArray")}
-      ts.serializer
+      val $serOps = ${c.prefix.tree}
+      ${callIfExists[S](q"$serOps.serializer", "beginArray")}
+      $value.foreach($serOps.bind(_))
+      ${callIfExists[S](q"$serOps.serializer", "endArray")}
+      $serOps.serializer
     }"""
     //println(block)
     block
   }
 
   def bindMap(value: c.Tree): c.Tree = {
+    val serOps = fresh("serOps")
+    val k = fresh("k")
+    val v = fresh("v")
     val block = q"""{
-      val tm = ${c.prefix.tree}
-      val it = $value
-      tm.serializer.beginObject()
-      it.foreach(kv => {
-        tm.serializer.getFieldSerializer(kv._1).map(_.bind(kv._2))
-      })
-      tm.serializer.endObject()
-      tm.serializer
+      val $serOps = ${c.prefix.tree}
+      $serOps.serializer.beginObject()
+      $value.foreach{case ($k,$v) => {
+        $serOps.serializer.getFieldSerializer($k).map(_.bind($v))
+      }}
+      $serOps.serializer.endObject()
+      $serOps.serializer
     }"""
     //println(block)
     block
   }
 
   def unbind[D: c.WeakTypeTag, O: c.WeakTypeTag](partial: Boolean, originalValue: c.Tree): c.Tree = {
+    val dserOps = fresh("dserOps")
     val customDeserializer = c.inferImplicitValue(weakTypeOf[ImplicitDeserializer[O, _]])
     //println(customDeserializer)
     val block =
       if (!customDeserializer.isEmpty) {
         q"""{
-          val tu = ${c.prefix.tree}
-          $customDeserializer.read(tu.deserializer)
+          val $dserOps = ${c.prefix.tree}
+          $customDeserializer.read($dserOps.deserializer)
         }"""
       }
       else {
@@ -179,8 +190,8 @@ private [binders] trait BinderImplementation {
         //println("reader: " + reader)
         reader.map { readerMethod =>
           q"""{
-            val tu = ${c.prefix.tree}
-            ${makeReaderWriterCall(q"tu.deserializer", readerMethod)}
+            val $dserOps = ${c.prefix.tree}
+            ${makeReaderWriterCall(q"$dserOps.deserializer", readerMethod)}
           }"""
         } getOrElse {
           val companionType = tpe.typeSymbol.companionSymbol.typeSignature
@@ -210,21 +221,30 @@ private [binders] trait BinderImplementation {
   }
 
   def unbindOption[D: c.WeakTypeTag, O: c.WeakTypeTag]: c.Tree = {
+    val dserOps = fresh("dserOps")
     val tpe = weakTypeOf[O]
     val elTpe = extractTypeArgs(tpe).head
 
     val block = q"""{
-      val too = ${c.prefix.tree}
-      if (too.deserializer.isNull)
+      val $dserOps = ${c.prefix.tree}
+      if ($dserOps.deserializer.isNull)
         None
       else
-        Some(too.deserializer.unbind[$elTpe])
+        Some($dserOps.deserializer.unbind[$elTpe])
     }"""
     //println(block)
     block
   }
 
   def unbindEither[D: c.WeakTypeTag, O: c.WeakTypeTag]: c.Tree = {
+    val dserOps = fresh("dserOps")
+    val v = fresh("v")
+    val leftIsBetter = fresh("leftIsBetter")
+    val r = fresh("r")
+    val r1 = fresh("r1")
+    val r2 = fresh("r2")
+    val e1 = fresh("e1")
+    val e2 = fresh("e2")
     val tpe = weakTypeOf[O]
     val left = extractTypeArgs(tpe).head
     val right = extractTypeArgs(tpe).tail.head
@@ -233,25 +253,25 @@ private [binders] trait BinderImplementation {
     val rightDStr = getTypeDynamicString(right.tpe)
 
     val block = q"""{
-      val too = ${c.prefix.tree}
+      val $dserOps = ${c.prefix.tree}
       import eu.inn.binders.dynamic._
       import scala.util._
-      val value = too.deserializer.unbind[eu.inn.binders.dynamic.Value]
-      val leftIsBetter = eu.inn.binders.internal.Helpers.getConformity($leftDStr,value) >=
-        eu.inn.binders.internal.Helpers.getConformity($rightDStr,value)
+      val $v = $dserOps.deserializer.unbind[eu.inn.binders.dynamic.Value]
+      val $leftIsBetter = eu.inn.binders.internal.Helpers.getConformity($leftDStr,$v) >=
+        eu.inn.binders.internal.Helpers.getConformity($rightDStr,$v)
 
-      val r = Try (if (leftIsBetter) Left(value.fromDynamic[$left]) else Right(value.fromDynamic[$right]))
+      val $r = Try (if ($leftIsBetter) Left($v.fromDynamic[$left]) else Right($v.fromDynamic[$right]))
         match {
-          case Success(r1) => r1
-          case Failure(e1) =>
-            Try (if (leftIsBetter) Right(value.fromDynamic[$right]) else Left(value.fromDynamic[$left]))
+          case Success($r1) => $r1
+          case Failure($e1) =>
+            Try (if ($leftIsBetter) Right($v.fromDynamic[$right]) else Left($v.fromDynamic[$left]))
             match {
-              case Success(r2) => r2
-              case Failure(e2) =>
-                throw new eu.inn.binders.core.BindersException("Value '"+value+"' didn't match neither Left nor Right", e2)
+              case Success($r2) => $r2
+              case Failure($e2) =>
+                throw new eu.inn.binders.core.BindersException("Value '"+$v+"' didn't match neither Left nor Right", $e2)
             }
         }
-      r
+      $r
     }"""
     //println(block)
     block
@@ -284,16 +304,20 @@ private [binders] trait BinderImplementation {
   }
 
   def unbindIterable[D: c.WeakTypeTag, O: c.WeakTypeTag]: c.Tree = {
+    val dserOps = fresh("dserOps")
     val tpe = weakTypeOf[O]
     val elTpe = extractTypeArgs(tpe).head
 
     q"""{
-      val ti = ${c.prefix.tree}
-      ${convertIterator(tpe, q"ti.deserializer.iterator().map(_.unbind[$elTpe])")}
+      val $dserOps = ${c.prefix.tree}
+      ${convertIterator(tpe, q"$dserOps.deserializer.iterator().map(_.unbind[$elTpe])")}
     }"""
   }
 
   def unbindObject[D: c.WeakTypeTag, O: c.WeakTypeTag](partial: Boolean, originalValue: c.Tree): c.Tree = {
+    val dserOps = fresh("dserOps")
+    val i = fresh("i")
+    val orig = fresh("orig")
     val converter = findConverter[D]
     val caseClassParams = extractCaseClassParams[O]
     val companionSymbol = weakTypeOf[O].typeSymbol.companionSymbol
@@ -305,18 +329,18 @@ private [binders] trait BinderImplementation {
       (
         // _1
         if (partial)
-          q"var $varName : Option[${parameter.typeSignature}] = Some(orig.${newTermName(parameter.name.decoded)})"
+          q"var $varName : Option[${parameter.typeSignature}] = Some($orig.${newTermName(parameter.name.decoded)})"
         else
           q"var $varName : Option[${parameter.typeSignature}] = None",
 
         // _2
         if (parameter.asTerm.isParamWithDefault) {
           cq"""$fieldName => {
-            $varName = i.unbind[Option[${parameter.typeSignature}]]
+            $varName = $i.unbind[Option[${parameter.typeSignature}]]
           }"""
         } else {
           cq"""$fieldName => {
-            $varName = Some(i.unbind[${parameter.typeSignature}])
+            $varName = Some($i.unbind[${parameter.typeSignature}])
           }"""
         },
 
@@ -334,15 +358,13 @@ private [binders] trait BinderImplementation {
     }
 
     val block = q"""{
-      val tpi = ${c.prefix.tree}
-      ${if (partial) { q"val orig = $originalValue" } else q""}
+      val $dserOps = ${c.prefix.tree}
+      ${if (partial) { q"val $orig = $originalValue" } else q""}
       ..${vars.map(_._1)}
-      tpi.deserializer.iterator().foreach{i =>
-        i.fieldName.map { fieldName =>
-          fieldName match {
-            case ..${vars.map(_._2)}
-            case _ => { /*todo: implement smart deserialization*/ }
-          }
+      $dserOps.deserializer.iterator().foreach{case $i =>
+        $i.fieldName.map {
+          case ..${vars.map(_._2)}
+          case _ => { /*todo: implement smart deserialization*/ }
         } getOrElse {
           throw new eu.inn.binders.core.BindersException("Can't deserialize object: iterator didn't return fieldName")
         }
@@ -357,12 +379,14 @@ private [binders] trait BinderImplementation {
   }
 
   def unbindMap[O: c.WeakTypeTag]: c.Tree = {
+    val dserOps = fresh("dserOps")
+    val el = fresh("el")
     val tpe = weakTypeOf[O]
     val elTpe = extractTypeArgs(tpe).tail.head
     val block = q"""{
-      val tm = ${c.prefix.tree}
-      tm.deserializer.iterator().map{ el =>
-        (el.fieldName.get, el.unbind[$elTpe])
+      val $dserOps = ${c.prefix.tree}
+      $dserOps.deserializer.iterator().map{ case $el =>
+        ($el.fieldName.get, $el.unbind[$elTpe])
       }.toMap
     }"""
     //println(block)
@@ -695,4 +719,6 @@ private [binders] trait BinderImplementation {
       }
     }
   }
+
+  def fresh(prefix: String): TermName = newTermName(c.fresh(prefix))
 }
