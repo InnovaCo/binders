@@ -1,5 +1,6 @@
 package eu.inn.binders.internal
 
+import eu.inn.binders.core.{ImplicitDeserializer, Serializer, ImplicitSerializer}
 import eu.inn.binders.dynamic.Value
 
 import scala.collection.SeqLike
@@ -13,38 +14,48 @@ private [binders] trait BinderImplementation {
 
   import c.universe._
 
-  def bind[S: c.WeakTypeTag, O: c.WeakTypeTag](value: c.Tree): c.Tree = {
-    val writers = extractWriters[S]
-    val tpe = weakTypeOf[O]
-    val writer = findWriter(writers, tpe)
-
+  def bind[S: c.WeakTypeTag , O: c.WeakTypeTag](value: c.Tree): c.Tree = {
+    val customSerializer = c.inferImplicitValue(weakTypeOf[ImplicitSerializer[O,_]])
     val block =
-    if (writer.isEmpty) {
-      if (tpe <:< typeOf[Option[_]]){
-        bindOption[S, O](value)
-      }else
-      if (tpe <:< typeOf[Either[_,_]]){
-        bindEither[S, O](value)
-      }else
-      if (tpe <:< typeOf[Map[_,_]]){
-        bindMap(value)
-      }
-      else if (tpe <:< typeOf[TraversableOnce[_]]){
-        bindTraversable[S, O](value)
-      }
-      else if (tpe.typeSymbol.companionSymbol != NoSymbol){
-        bindObject[S, O](value, partial = false)
-      }
-      else
-        c.abort(c.enclosingPosition, s"No write function found for parameter with type $tpe in ${weakTypeOf[S]}")
-    }
-    else {
+    if (!customSerializer.isEmpty) {
       q"""{
         val t = ${c.prefix.tree}
-        ${makeReaderWriterCall(q"t.serializer", writer.get, List(value))}
+        $customSerializer.write(t.serializer, $value)
         t.serializer
-        }"""
+      }"""
     }
+    else {
+      val writers = extractWriters[S]
+      val tpe = weakTypeOf[O]
+      val writer = findWriter(writers, tpe)
+      if (writer.isEmpty) {
+        if (tpe <:< typeOf[Option[_]]){
+          bindOption[S, O](value)
+        }else
+        if (tpe <:< typeOf[Either[_,_]]){
+          bindEither[S, O](value)
+        }else
+        if (tpe <:< typeOf[Map[_,_]]){
+          bindMap(value)
+        }
+        else if (tpe <:< typeOf[TraversableOnce[_]]){
+          bindTraversable[S, O](value)
+        }
+        else if (tpe.typeSymbol.companionSymbol != NoSymbol){
+          bindObject[S, O](value, partial = false)
+        }
+        else
+          c.abort(c.enclosingPosition, s"No write function found for parameter with type $tpe in ${weakTypeOf[S]}")
+      }
+      else {
+        q"""{
+          val t = ${c.prefix.tree}
+          ${makeReaderWriterCall(q"t.serializer", writer.get, List(value))}
+          t.serializer
+          }"""
+      }
+    }
+
     //println(block)
     block
   }
@@ -151,37 +162,47 @@ private [binders] trait BinderImplementation {
   }
 
   def unbind[D: c.WeakTypeTag, O: c.WeakTypeTag](partial: Boolean, originalValue: c.Tree): c.Tree = {
-    val tpe = weakTypeOf[O]
-    val readers = extractReaders[D]
-    //println ("readers: " + readers)
-    val reader = findReader(readers, tpe)
-    //println("reader: " + reader)
+    val customDeserializer = c.inferImplicitValue(weakTypeOf[ImplicitDeserializer[O, _]])
+    //println(customDeserializer)
     val block =
-      reader.map { readerMethod =>
+      if (!customDeserializer.isEmpty) {
         q"""{
           val tu = ${c.prefix.tree}
-          ${makeReaderWriterCall(q"tu.deserializer", readerMethod)}
+          $customDeserializer.read(tu.deserializer)
         }"""
-      } getOrElse {
-        val companionType = tpe.typeSymbol.companionSymbol.typeSignature
-        companionType.declaration(newTermName("unapply")) match {
-          case NoSymbol =>
-            if (tpe <:< typeOf[Option[_]]) {
-              unbindOption[D,O]
-            }else
-            if (tpe <:< typeOf[Either[_,_]]){
-              unbindEither[D,O]
-            }else
-            if (tpe <:< typeOf[Map[_,_]]) {
-              unbindMap[O]
-            }
-            else if (tpe <:< typeOf[TraversableOnce[_]]) {
-              unbindIterable[D,O]
-            }
-            else {
-              c.abort(c.enclosingPosition, s"No read function found for $tpe in ${weakTypeOf[D]}")
-            }
-          case s => unbindObject[D,O](partial, originalValue)
+      }
+      else {
+        val tpe = weakTypeOf[O]
+        val readers = extractReaders[D]
+        //println ("readers: " + readers)
+        val reader = findReader(readers, tpe)
+        //println("reader: " + reader)
+        reader.map { readerMethod =>
+          q"""{
+            val tu = ${c.prefix.tree}
+            ${makeReaderWriterCall(q"tu.deserializer", readerMethod)}
+          }"""
+        } getOrElse {
+          val companionType = tpe.typeSymbol.companionSymbol.typeSignature
+          companionType.declaration(newTermName("unapply")) match {
+            case NoSymbol =>
+              if (tpe <:< typeOf[Option[_]]) {
+                unbindOption[D, O]
+              } else
+              if (tpe <:< typeOf[Either[_, _]]) {
+                unbindEither[D, O]
+              } else
+              if (tpe <:< typeOf[Map[_, _]]) {
+                unbindMap[O]
+              }
+              else if (tpe <:< typeOf[TraversableOnce[_]]) {
+                unbindIterable[D, O]
+              }
+              else {
+                c.abort(c.enclosingPosition, s"No read function found for $tpe in ${weakTypeOf[D]}")
+              }
+            case s => unbindObject[D,O](partial, originalValue)
+          }
         }
       }
     //println(block)

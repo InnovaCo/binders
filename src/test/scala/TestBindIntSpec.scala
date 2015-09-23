@@ -33,8 +33,8 @@ class TestBindIntSpec extends FlatSpec with Matchers {
 
   "all int parameters " should " unbind" in {
     val m = mock[TestDeserializer[PlainConverter]]
-    when(m.readInt).thenReturn(123456)
-    when(m.readIntNullable).thenReturn(Some(555))
+    when(m.readInt()).thenReturn(123456)
+    when(m.readIntNullable()).thenReturn(Some(555))
 
     val i1 = m.unbind[Int]
     val i2 = m.unbind[Option[Int]]
