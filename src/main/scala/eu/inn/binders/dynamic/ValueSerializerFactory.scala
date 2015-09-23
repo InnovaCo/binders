@@ -4,7 +4,7 @@ import eu.inn.binders.core.{Deserializer, Serializer}
 import eu.inn.binders.naming.{PlainConverter, Converter}
 
 trait ValueSerializerFactory[C <: Converter, S <: ValueSerializerBase[C,_], D <: Deserializer[C]] {
-  def withDeserializer[T](value: Value, codeBlock: D ⇒ T): T = {
+  def withDeserializer[T](value: Value)(codeBlock: D ⇒ T): T = {
     val deserializer = createDeserializer(value)
     codeBlock(deserializer)
   }

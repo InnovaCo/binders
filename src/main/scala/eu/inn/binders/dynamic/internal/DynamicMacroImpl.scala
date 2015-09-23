@@ -12,11 +12,12 @@ private [dynamic] trait DynamicMacroImpl {
 
   def fromDynamic[O: c.WeakTypeTag]: c.Tree = {
     val t = fresh("t")
+    val d = fresh("s")
     val block = q"""{
       val $t = ${c.prefix.tree}
-      ValueSerializerFactory.findFactory().withDeserializer[${weakTypeOf[O]}]($t.value, dsrz$$666 => {
-        dsrz$$666.unbind[${weakTypeOf[O]}]
-      })
+      ValueSerializerFactory.findFactory().withDeserializer[${weakTypeOf[O]}]($t.value) { case($d) => {
+        $d.unbind[${weakTypeOf[O]}]
+      }}
     }"""
     //println(block)
     block
@@ -24,11 +25,12 @@ private [dynamic] trait DynamicMacroImpl {
 
   def toDynamic[O: c.WeakTypeTag]: c.Tree = {
     val t = fresh("t")
+    val s = fresh("s")
     val block = q"""{
       val $t = ${c.prefix.tree}
-      ValueSerializerFactory.findFactory().withSerializer((srlz$$666)=> {
-        srlz$$666.bind[${weakTypeOf[O]}]($t.obj)
-      })
+      ValueSerializerFactory.findFactory().withSerializer {case ($s) => {
+        $s.bind[${weakTypeOf[O]}]($t.obj)
+      }}
     }"""
     //println(block)
     block
