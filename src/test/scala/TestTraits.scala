@@ -5,6 +5,8 @@ import java.util.Date
 
 import scala.reflect.ClassTag
 
+trait TestGeneric
+
 trait TestDeserializer[C <: Converter] extends Deserializer[C] {
   def readInt(): Int
 
@@ -23,6 +25,8 @@ trait TestDeserializer[C <: Converter] extends Deserializer[C] {
   def isNull: Boolean
 
   def readDynamic(): Value
+
+  def readGenericWihBounds[T <: TestGeneric](): T
 
   def iterator(): Iterator[TestDeserializer[C]]
 }
@@ -51,6 +55,8 @@ trait TestSerializer[C <: Converter] extends Serializer[C] {
   def writeLong(value: Long)
 
   def writeString(value: String)
+
+  def writeGenericWithBounds[T <: TestGeneric](value: T)
 
   def writeNull()
 

@@ -33,6 +33,7 @@ private [binders] trait BinderImplementation {
       val writers = extractWriters[S]
       val tpe = weakTypeOf[O]
       val writer = findWriter(writers, tpe)
+
       if (writer.isEmpty) {
         if (tpe <:< typeOf[Option[_]]){
           bindOption[S, O](value)
@@ -216,7 +217,7 @@ private [binders] trait BinderImplementation {
           }
         }
       }
-    //println(block)
+
     block
   }
 
@@ -482,14 +483,13 @@ private [binders] trait BinderImplementation {
   }
 
   protected def findWriter(writers: List[MethodSymbol], valueType: Type/*, print: Boolean = false*/): Option[(MethodSymbol, Map[Symbol, Type])] = {
-    //println("writers = " + writers)
     mostMatching(writers, m => {
-      val writerType = m.paramss.head(0) // parSym 0 - value
-      Some(compareTypes(valueType, writerType.typeSignature/*, print*/))
+      val writerType = m.paramss.head.head // parSym 0 - value
+      Some(compareTypes(valueType, writerType.typeSignature/*, print*/, m.typeParams))
     })
   }
 
-  protected def compareTypes(left: Type, right: Type): (Int, Map[Symbol, Type]) = {
+  protected def compareTypes(left: Type, right: Type, typeParams: List[Symbol]): (Int, Map[Symbol, Type]) = {
     if (left =:= right)
       (100, Map())
     else
@@ -499,51 +499,66 @@ private [binders] trait BinderImplementation {
     if (left weak_<:< right)
       (80, Map())
     else {
-      left match {
-        case TypeRef(_, _, leftArgs) => {
-          right match {
-            case TypeRef(rightTpe, rightSym, rightArgs) => {
-              val typeMap = collection.mutable.Map[Symbol, Type]()
-
-              // println(s"lt = ${left.baseClasses} rt = ${rightTpe.baseClasses}")
-              var r =
-                if (left.typeSymbol.typeSignature =:= right.typeSymbol.typeSignature) // Outer type is matched fully
-                  50
-                else
-                if (left.baseClasses.exists(_.typeSignature =:= right.typeSymbol.typeSignature)) // Outer type inherits
-                  30
-                else
-                if (rightTpe == NoPrefix) {
-                  // Right symbol is generic type parameter
+      right match {
+        case TypeRef(rightTpe, rightSym, rightArgs) => {
+          val typeMap = collection.mutable.Map[Symbol, Type]()
+          var r =
+            if (left.typeSymbol.typeSignature =:= right.typeSymbol.typeSignature) // Outer type is matched fully
+              50
+            else
+            if (left.baseClasses.exists(_.typeSignature =:= right.typeSymbol.typeSignature)) // Outer type inherits
+              30
+            else
+            if (rightTpe == NoPrefix) {
+              // Right symbol is generic type parameter
+              typeParams.find(_ == rightSym).map{ typeParamSymbol ⇒
+                val typeMatched = typeParamSymbol.typeSignature match {
+                  case TypeBounds(lo,hi) ⇒
+                    lo <:< left && left <:< hi
+                  case other: Type ⇒
+                    left <:< other
+                }
+                if (typeMatched) {
                   typeMap += rightSym -> left
                   20
                 }
                 else
                   0
+              } getOrElse {
+                0
+              }
+            }
+            else
+              0
 
-              //println("LB = " + left.baseClasses)
-              //println("leftSym = " + left + " | " + leftArgs + " right = " + right + " | " + rightArgs + " r = " + r)
-
-              if (r > 0) {
+          if (r > 0) {
+            left match {
+              case TypeRef(leftTpe, leftSym, leftArgs) => {
                 // now check generic type args
-                // println("Checking generic type args of : " + left + "("+leftTpe+") " + right + "("+rightTpe+") r = " + r)
                 if (leftArgs.size == rightArgs.size) {
-                  for (i <- 0 until leftArgs.size) {
+                  for (i <- leftArgs.indices) {
                     val lefT = leftArgs(i)
                     val rightT = rightArgs(i)
-                    val tR = compareTypes(lefT, rightT)
+                    val tR = compareTypes(lefT, rightT, typeParams)
                     if (tR._1 != 0) {
                       typeMap ++= tR._2
                     }
                     else
                       r = 0
                   }
-                }
+                }/* else {
+                  r = 0
+                }*/
               }
-              (r, typeMap.toMap)
+              /*case RefinedType(_) ⇒
+                if (rightArgs.nonEmpty)
+                  r = 0
+              case _ =>
+                r = 0*/
+              case _ ⇒ // do nothing
             }
-            case _ => (0, Map())
           }
+          (r, typeMap.toMap)
         }
         case _ => (0, Map())
       }
@@ -581,7 +596,7 @@ private [binders] trait BinderImplementation {
 
   protected def findReader(readers: List[MethodSymbol], returnType: Type): Option[(MethodSymbol, Map[Symbol, Type])] = {
     mostMatching(readers, m => {
-      Some(compareTypes(returnType, m.returnType))
+      Some(compareTypes(returnType, m.returnType, m.typeParams))
     })
   }
 
