@@ -22,6 +22,7 @@ class TestMultipleApplySpec extends FlatSpec with Matchers {
 
     m.bind(MultipleApply(123456, "abc"))
 
+    verify(m).beginObject()
     verify(m).getFieldSerializer("intValue")
     verify(m1).writeInt(123456)
     verifyNoMoreInteractions(m1)
@@ -29,6 +30,7 @@ class TestMultipleApplySpec extends FlatSpec with Matchers {
     verify(m).getFieldSerializer("stringValue")
     verify(m2).writeString("abc")
     verifyNoMoreInteractions(m2)
+    verify(m).endObject()
     verifyNoMoreInteractions(m)
   }
 

@@ -40,6 +40,7 @@ class TestProductSpec extends FlatSpec with Matchers {
 
     m.bind(TestProduct(123456, Some(555), 7890))
 
+    verify(m).beginObject()
     verify(m).getFieldSerializer("intValue1")
     verify(m1).writeInt(123456)
     verifyNoMoreInteractions(m1)
@@ -51,6 +52,7 @@ class TestProductSpec extends FlatSpec with Matchers {
     verify(m).getFieldSerializer("intValue2")
     verify(m3).writeInt(7890)
     verifyNoMoreInteractions(m3)
+    verify(m).endObject()
 
     verifyNoMoreInteractions(m)
   }
@@ -67,6 +69,7 @@ class TestProductSpec extends FlatSpec with Matchers {
 
     m.bind(TestProduct(123456, Some(555), 7890))
 
+    verify(m).beginObject()
     verify(m).getFieldSerializer("int_value1")
     verify(m1).writeInt(123456)
     verifyNoMoreInteractions(m1)
@@ -78,6 +81,7 @@ class TestProductSpec extends FlatSpec with Matchers {
     verify(m).getFieldSerializer("int_value2")
     verify(m3).writeInt(7890)
     verifyNoMoreInteractions(m3)
+    verify(m).endObject()
 
     verifyNoMoreInteractions(m)
   }
@@ -92,12 +96,14 @@ class TestProductSpec extends FlatSpec with Matchers {
 
     m.bindPartial(TestProduct(123456, Some(555), 7890))
 
+    verify(m).beginObject()
     verify(m).getFieldSerializer("intValue1")
     verify(m1).writeInt(123456)
     verifyNoMoreInteractions(m1)
 
     verify(m).getFieldSerializer("nullableValue")
     verify(m).getFieldSerializer("intValue2")
+    verify(m).endObject()
 
     verifyNoMoreInteractions(m)
   }
@@ -116,6 +122,7 @@ class TestProductSpec extends FlatSpec with Matchers {
     implicit val op3: BindOptions = new BindOptions(true)
     m.bind(TestProduct(888666777, None, 7890))
 
+    verify(m).beginObject()
     verify(m).getFieldSerializer("int_value1")
     verify(m1).writeInt(888666777)
     verifyNoMoreInteractions(m1)
@@ -127,6 +134,7 @@ class TestProductSpec extends FlatSpec with Matchers {
     verify(m).getFieldSerializer("int_value2")
     verify(m3).writeInt(7890)
     verifyNoMoreInteractions(m3)
+    verify(m).endObject()
 
     verifyNoMoreInteractions(m)
   }
@@ -143,6 +151,7 @@ class TestProductSpec extends FlatSpec with Matchers {
 
     m.bind(TestProduct(888666777, None, 7890))
 
+    verify(m).beginObject()
     verify(m).getFieldSerializer("int_value1")
     verify(m1).writeInt(888666777)
     verifyNoMoreInteractions(m1)
@@ -154,6 +163,7 @@ class TestProductSpec extends FlatSpec with Matchers {
     verify(m).getFieldSerializer("int_value2")
     verify(m3).writeInt(7890)
     verifyNoMoreInteractions(m3)
+    verify(m).endObject()
 
     verifyNoMoreInteractions(m)
   }
@@ -273,12 +283,14 @@ class TestProductSpec extends FlatSpec with Matchers {
 
     m.bind(TestProductAnnotated(576, 90))
 
+    verify(m).beginObject()
     verify(m).getFieldSerializer("f1Value")
     verify(m1).writeInt(576)
     verifyNoMoreInteractions(m1)
     verify(m).getFieldSerializer("f2_value")
     verify(m2).writeInt(90)
     verifyNoMoreInteractions(m2)
+    verify(m).endObject()
     verifyNoMoreInteractions(m)
   }
 
@@ -292,6 +304,7 @@ class TestProductSpec extends FlatSpec with Matchers {
 
     m.bind(TestTrait(123456, "abc"))
 
+    verify(m).beginObject()
     verify(m).getFieldSerializer("intValue")
     verify(m1).writeInt(123456)
     verifyNoMoreInteractions(m1)
@@ -299,6 +312,7 @@ class TestProductSpec extends FlatSpec with Matchers {
     verify(m).getFieldSerializer("stringValue")
     verify(m2).writeString("abc")
     verifyNoMoreInteractions(m2)
+    verify(m).endObject()
 
     verifyNoMoreInteractions(m)
   }

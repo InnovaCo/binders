@@ -10,11 +10,11 @@ class TestCollectionsSpec extends FlatSpec with Matchers {
 
   def getMockList = {
     val testData = List(123456, 7890)
-    val m = mock[TestDeserializer[PlainConverter]]
+    val m = mock[TestDeserializerWithGenerics[PlainConverter]]
     val mi = testData.map {
       l =>
       {
-        val mi = mock[TestDeserializer[PlainConverter]]
+        val mi = mock[TestDeserializerWithGenerics[PlainConverter]]
         when(mi.readInt()).thenReturn(l)
         mi
       }
@@ -24,21 +24,21 @@ class TestCollectionsSpec extends FlatSpec with Matchers {
   }
 
   "Map[Long] " should " be bound" in {
-    val m = mock[TestSerializer[PlainConverter]]
+    val m = mock[TestSerializerWithGenerics[PlainConverter]]
     val map: Map[Long,String] = Map(1l -> "a", 2l -> "b")
     m.bind(map)
     verify(m).writeMap(Map(1l -> "a", 2l -> "b"))
   }
 
   "CoolMap = Map[Long,String] " should " be bound" in {
-    val m = mock[TestSerializer[PlainConverter]]
+    val m = mock[TestSerializerWithGenerics[PlainConverter]]
     val map: DefineType.CoolMap = Map(1l -> "a", 2l -> "b")
     m.bind(map)
     verify(m).writeMap(Map(1l -> "a", 2l -> "b"))
   }
 
   "Traversable of integers without explicit type " should " be bound" in {
-    val m = mock[TestSerializer[PlainConverter]]
+    val m = mock[TestSerializerWithGenerics[PlainConverter]]
     val t:Traversable[Int] = Seq(123456, 7890).toTraversable
     m.bind(t)
     verify(m).beginArray()
@@ -48,7 +48,7 @@ class TestCollectionsSpec extends FlatSpec with Matchers {
   }
 
   "Seq of integers without explicit type " should " be bound" in {
-    val m = mock[TestSerializer[PlainConverter]]
+    val m = mock[TestSerializerWithGenerics[PlainConverter]]
     m.bind(Seq(123456, 7890))
     verify(m).writeSeq(Seq(123456, 7890))
   }

@@ -123,8 +123,10 @@ private [binders] trait BinderImplementation {
           q"$serOps.serializer.getFieldSerializer($fieldName).map(_.bind($o.${newTermName(parameter.name.toString)}))"
         else
           q"getFieldOrThrow($serOps.serializer.getFieldSerializer($fieldName), $fieldName).bind($o.${newTermName(parameter.name.toString)})"
-      if (parameter.typeSignature <:< typeOf[Option[_]] || parameter.typeSignature <:< typeOf[Value])
-        q"if ($o.${newTermName(parameter.name.toString)}.isDefined || !eu.inn.binders.core.BindOptions.get.skipOptionalFields){$q}"
+      if (parameter.typeSignature <:< typeOf[Option[_]]
+        || parameter.typeSignature <:< typeOf[Value]
+        || parameter.typeSignature <:< typeOf[Iterable[_]])
+        q"if (!$o.${newTermName(parameter.name.toString)}.isEmpty || !eu.inn.binders.core.BindOptions.get.skipOptionalFields){$q}"
       else
         q
     }
@@ -353,6 +355,18 @@ private [binders] trait BinderImplementation {
           q"$parameter = $varName.flatten"
         else if (parameter.typeSignature <:< typeOf[Value])
           q"$parameter = $varName.getOrElse(eu.inn.binders.dynamic.Null)"
+        else if (parameter.typeSignature <:< typeOf[Map[_,_]])
+          q"$parameter = $varName.getOrElse(Map.empty)"
+        else if (parameter.typeSignature <:< typeOf[Vector[_]])
+          q"$parameter = $varName.getOrElse(Vector.empty)"
+        else if (parameter.typeSignature <:< typeOf[IndexedSeq[_]])
+          q"$parameter = $varName.getOrElse(IndexedSeq.empty)"
+        else if (parameter.typeSignature <:< typeOf[Set[_]])
+          q"$parameter = $varName.getOrElse(Set.empty)"
+        else if (parameter.typeSignature <:< typeOf[List[_]])
+          q"$parameter = $varName.getOrElse(List.empty)"
+        else if (parameter.typeSignature <:< typeOf[Seq[_]])
+          q"$parameter = $varName.getOrElse(Seq.empty)"
         else
           q"$parameter = $varName.getOrElse(throw new eu.inn.binders.core.FieldNotFoundException($fieldName))"
       )
