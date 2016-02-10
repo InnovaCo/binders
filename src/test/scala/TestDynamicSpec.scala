@@ -134,6 +134,14 @@ class TestDynamicSpec extends FlatSpec with Matchers {
     }
   }
 
+  "DynamicValue " should " merge " in {
+    val value1 = Obj(Map("a" -> Number(1), "b" -> Text("ho"), "c" -> Bool(true), "d" → Number(5), "e" → Text("kl")))
+    val value2 = Obj(Map("a" -> Number(2), "b" -> Text("no"), "c" -> Bool(false), "d" → Null))
+    val value3 = value1.merge(value2)
+
+    value3 should equal(Obj(Map("a" -> Number(2), "b" -> Text("no"), "c" -> Bool(false), "d" → Null, "e" → Text("kl"))))
+  }
+
   def toDynamicNumber(kv: (String, Int)) = {
     (kv._1, Number(kv._2))
   }

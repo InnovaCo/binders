@@ -105,7 +105,37 @@ trait Value extends Any with Dynamic {
     })
   }
 
-  def castUnavailable(s: String) = throw new ClassCastException(s)
+  def merge(other: Value): Value = {
+    accept[Value](new ValueVisitor[Value] {
+      override def visitBool(d: Bool) = other
+      override def visitText(d: Text) = other
+      override def visitObj(dOriginal: Obj) = {
+        other.accept[Value](new ValueVisitor[Value] {
+          override def visitNull(): Value = other
+          override def visitBool(d: Bool): Value = other
+          override def visitObj(dOther: Obj): Value = mergeFields(dOriginal,dOther)
+          override def visitText(d: Text): Value = other
+          override def visitNumber(d: Number): Value = other
+          override def visitLst(d: Lst): Value = other
+        })
+      }
+      override def visitNumber(d: Number) = other
+      override def visitLst(d: Lst) = other
+      override def visitNull() = other
+    })
+  }
+
+  private def mergeFields(dOriginal: Obj, dOther: Obj): Obj = {
+    Obj(dOriginal.v ++ dOther.v.map{
+      case (k,v) => k -> dOriginal.v.get(k).map { original ⇒
+        original.merge(v)
+      }.getOrElse {
+        v
+      }
+    })
+  }
+
+  private def castUnavailable(s: String) = throw new ClassCastException(s)
 
   def selectDynamic[T](name: String) = macro DynamicMacro.selectDynamic[T]
 }
