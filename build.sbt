@@ -2,7 +2,7 @@ import sbt.Keys._
 
 name := "binders-core"
 
-version := "0.10"
+version := "0.11"
 
 organization := "eu.inn"
 
@@ -24,7 +24,7 @@ libraryDependencies := {
     // in Scala 2.10, quasiquotes are provided by macro paradise
     case Some((2, 10)) =>
       libraryDependencies.value ++ Seq(
-        compilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M5" cross CrossVersion.full),
-        "org.scalamacros" %% "quasiquotes" % "2.1.0-M5" cross CrossVersion.binary)
+        compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
+        "org.scalamacros" %% "quasiquotes" % "2.1.0" cross CrossVersion.binary)
   }
 }

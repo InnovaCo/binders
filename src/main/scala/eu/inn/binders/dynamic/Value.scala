@@ -70,7 +70,7 @@ case class Text(v: String) extends AnyVal with Value {
   override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitText(this)
 }
 
-case class Obj(v: Map[String, Value] = Map()) extends AnyVal with Value{
+case class Obj(v: Map[String, Value]) extends AnyVal with Value{
   override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitObj(this)
 
   override def merge(other: Value): Value = {
@@ -89,8 +89,17 @@ case class Obj(v: Map[String, Value] = Map()) extends AnyVal with Value{
   }
 }
 
-case class Lst(v: Seq[Value] = Seq()) extends AnyVal with Value{
+object Obj {
+  def apply(v: (String,Value)*): Obj = new Obj(v.toMap)
+  def apply(): Obj = new Obj(Map.empty)
+}
+
+case class Lst(v: Seq[Value]) extends AnyVal with Value{
   override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitLst(this)
+}
+
+object LstV { // can't be Lst :-(
+  def apply(seq: Value*): Lst = Lst(seq)
 }
 
 case class Bool(v: Boolean) extends AnyVal with Value{
