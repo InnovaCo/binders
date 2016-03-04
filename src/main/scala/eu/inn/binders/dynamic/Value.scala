@@ -90,12 +90,19 @@ case class Obj(v: Map[String, Value]) extends AnyVal with Value{
 }
 
 object Obj {
-  def apply(v: (String,Value)*): Obj = new Obj(v.toMap)
   def apply(): Obj = new Obj(Map.empty)
+}
+
+object ObjV {
+  def apply(v: (String,Value)*): Obj = new Obj(v.toMap)
 }
 
 case class Lst(v: Seq[Value]) extends AnyVal with Value{
   override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitLst(this)
+}
+
+object Lst {
+  def apply(): Lst = Lst(Seq.empty)
 }
 
 object LstV { // can't be Lst :-(

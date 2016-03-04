@@ -104,13 +104,13 @@ class TestDynamicSpec extends FlatSpec with Matchers {
     import DefineType._
     import eu.inn.binders.dynamic._
 
-    val m = Obj("a" -> "he", "b" -> "ho")
+    val m = ObjV("a" -> "he", "b" -> "ho")
     val map = m.fromDynamic[StringMap]
     map should equal(Map("a"->"he", "b"->"ho"))
   }
 
   "DynamicValue " should " allow selectDynamic " in {
-    val d = Obj("a" -> 1, "b" -> "ho", "c" -> true, "_" -> false)
+    val d = ObjV("a" -> 1, "b" -> "ho", "c" -> true, "_" -> false)
     val a = d.a[Int]
     a should equal(1)
 
@@ -135,22 +135,26 @@ class TestDynamicSpec extends FlatSpec with Matchers {
   }
 
   "DynamicValue " should " merge " in {
-    val value1 = Obj("a" -> 1, "b" -> "ho", "c" -> true, "d" → 5, "e" → "kl")
-    val value2 = Obj("a" -> 2, "b" -> "no", "c" -> false, "d" → Null)
+    val value1 = ObjV("a" -> 1, "b" -> "ho", "c" -> true, "d" → 5, "e" → "kl")
+    val value2 = ObjV("a" -> 2, "b" -> "no", "c" -> false, "d" → Null)
     val value3 = value1.merge(value2)
 
-    value3 should equal(Obj("a" -> 2, "b" -> "no", "c" -> false, "d" → Null, "e" → Text("kl")))
+    value3 should equal(ObjV("a" -> 2, "b" -> "no", "c" -> false, "d" → Null, "e" → Text("kl")))
   }
 
   "implicits" should "do conversion" in {
-    val obj = Obj("a" → 5, "b" → "18")
+    val obj = ObjV("a" → 5, "b" → "18")
     obj should equal(Obj(Map("a"→Number(5), "b"→Text("18"))))
+
+    val obj2 = ObjV("a" → "b")
+    obj2 should equal(Obj(Map("a"→Text("b"))))
+
     val lst = Lst(Seq("a",1,false))
     lst should equal(Lst(Seq(Text("a"),Number(1),Bool(false))))
   }
 
   "Value " should "do pattern matching" in {
-    val obj = Obj("a" → 5, "b" → "18")
+    val obj = ObjV("a" → 5, "b" → "18")
     obj match {
       case Obj(map) ⇒ // fine
     }
