@@ -26,8 +26,8 @@ trait Value extends Any with Dynamic {
   def asFloat: Float = asBigDecimal.toFloat
   def asDate: Date = new Date(asLong)
 
-  def asMap: Map[String, Value] = {
-    accept[Map[String, Value]](Visitors.asMapVisitor)
+  def asMap: scala.collection.Map[String, Value] = {
+    accept[scala.collection.Map[String, Value]](Visitors.asMapVisitor)
   }
 
   def asSeq: Seq[Value] = {
@@ -70,7 +70,7 @@ case class Text(v: String) extends AnyVal with Value {
   override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitText(this)
 }
 
-case class Obj(v: Map[String, Value]) extends AnyVal with Value{
+case class Obj(v: scala.collection.Map[String, Value]) extends AnyVal with Value{
   override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitObj(this)
 
   override def merge(other: Value): Value = {
@@ -94,7 +94,9 @@ object Obj {
 }
 
 object ObjV {
-  def apply(v: (String,Value)*): Obj = new Obj(v.toMap)
+  // currently there is only mutable effective map that preserves order
+  // so we use LinkedHashMap for that
+  def apply(v: (String,Value)*): Obj = new Obj(scala.collection.mutable.LinkedHashMap(v: _*))
 }
 
 case class Lst(v: Seq[Value]) extends AnyVal with Value{
@@ -153,13 +155,13 @@ private [dynamic] object Visitors {
     override def visitNull(): BigDecimal = 0
   }
 
-  val asMapVisitor = new ValueVisitor[Map[String, Value]] {
+  val asMapVisitor = new ValueVisitor[scala.collection.Map[String, Value]] {
     override def visitBool(d: Bool) = castUnavailable("Bool to Map[]")
     override def visitText(d: Text) = castUnavailable("Text to Map[]")
     override def visitObj(d: Obj) = d.v
     override def visitNumber(d: Number) = castUnavailable("Number to Map[]")
     override def visitLst(d: Lst) = castUnavailable("Lst to Map[]")
-    override def visitNull() = Map()
+    override def visitNull() = Map.empty
   }
 
   val asSeqVisitor = new ValueVisitor[Seq[Value]] {

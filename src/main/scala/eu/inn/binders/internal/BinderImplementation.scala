@@ -505,13 +505,13 @@ private [binders] trait BinderImplementation {
 
   protected def compareTypes(left: Type, right: Type, typeParams: List[Symbol]): (Int, Map[Symbol, Type]) = {
     if (left =:= right)
-      (100, Map())
+      (100, Map.empty)
     else
     if (left <:< right)
-      (90, Map())
+      (90, Map.empty)
     else
     if (left weak_<:< right)
-      (80, Map())
+      (80, Map.empty)
     else {
       right match {
         case TypeRef(rightTpe, rightSym, rightArgs) => {
@@ -574,7 +574,7 @@ private [binders] trait BinderImplementation {
           }
           (r, typeMap.toMap)
         }
-        case _ => (0, Map())
+        case _ => (0, Map.empty)
       }
     }
   }

@@ -103,7 +103,7 @@ class TestCollectionsInClassSpec extends FlatSpec with Matchers {
     when(m.iterator()).thenReturn(mci.toIterator)
 
     val t = m.unbind[TestStringCollections]
-    assert(t === TestStringCollections(Seq("a","b"), Map()))
+    assert(t === TestStringCollections(Seq("a","b"), Map.empty))
   }
 
   "empty List in case class " should " be deserialized by names " in {

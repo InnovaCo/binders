@@ -138,8 +138,19 @@ class TestDynamicSpec extends FlatSpec with Matchers {
     val value1 = ObjV("a" -> 1, "b" -> "ho", "c" -> true, "d" → 5, "e" → "kl")
     val value2 = ObjV("a" -> 2, "b" -> "no", "c" -> false, "d" → Null)
     val value3 = value1.merge(value2)
-
     value3 should equal(ObjV("a" -> 2, "b" -> "no", "c" -> false, "d" → Null, "e" → Text("kl")))
+  }
+
+  "Obj " should " preserve order of fields " in {
+    val seq = Seq[(String, Value)]("a" -> 1, "b" -> "ho", "c" -> true, "d" → 5, "e" → "kl")
+    val value1 = ObjV(seq: _*)
+
+    val z = seq.zipWithIndex.map(a ⇒ a._2 → a._1).toMap
+
+    value1.v.zipWithIndex.foreach{
+      case (kv, index) ⇒
+        z(index) should equal(kv)
+    }
   }
 
   "implicits" should "do conversion" in {
