@@ -1,6 +1,6 @@
 package eu.inn.binders.naming
 
-class CamelCaseBuilder(possibleLength: Option[Int] = None) extends IdentifierBuilder {
+class HyphenCaseBuilder(possibleLength: Option[Int] = None) extends IdentifierBuilder {
   private val sb = possibleLength.map {
     new StringBuilder(_)
   } getOrElse {
@@ -11,6 +11,7 @@ class CamelCaseBuilder(possibleLength: Option[Int] = None) extends IdentifierBui
 
   override def divider(): Unit = {
     nextIsUpperCase = true
+    sb.append('-')
   }
 
   override def regular(c: Char): Unit = {
