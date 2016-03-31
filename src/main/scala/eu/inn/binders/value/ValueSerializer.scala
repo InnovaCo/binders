@@ -1,4 +1,4 @@
-package eu.inn.binders.dynamic
+package eu.inn.binders.value
 
 import java.util.Date
 

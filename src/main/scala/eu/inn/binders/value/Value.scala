@@ -1,24 +1,18 @@
-package eu.inn.binders.dynamic
+package eu.inn.binders.value
 
 import java.util.Date
-import eu.inn.binders.dynamic.internal.DynamicMacro
-import scala.language.experimental.macros
+
 import scala.language.dynamics
+import scala.language.experimental.macros
 
 trait Value extends Any with Dynamic {
-  def accept[T](visitor: ValueVisitor[T]): T
+  def ~~[T](visitor: ValueVisitor[T]): T
 
-  def asString: String = {
-    accept[String](Visitors.asStringVisitor)
-  }
+  def asString: String = this ~~ Visitors.asStringVisitor
 
-  def asBoolean: Boolean = {
-    accept[Boolean](Visitors.asBooleanVisitor)
-  }
+  def asBoolean: Boolean = this ~~ Visitors.asBooleanVisitor
 
-  def asBigDecimal: BigDecimal = {
-    accept[BigDecimal](Visitors.asBigDecimalVisitor)
-  }
+  def asBigDecimal: BigDecimal = this ~~ Visitors.asBigDecimalVisitor
 
   def asInt: Int = asBigDecimal.toIntExact
   def asLong: Long = asBigDecimal.toLongExact
@@ -26,27 +20,28 @@ trait Value extends Any with Dynamic {
   def asFloat: Float = asBigDecimal.toFloat
   def asDate: Date = new Date(asLong)
 
-  def asMap: scala.collection.Map[String, Value] = {
-    accept[scala.collection.Map[String, Value]](Visitors.asMapVisitor)
-  }
+  def asMap: scala.collection.Map[String, Value] = this ~~ Visitors.asMapVisitor
 
-  def asSeq: Seq[Value] = {
-    accept[Seq[Value]](Visitors.asSeqVisitor)
-  }
+  def asSeq: Seq[Value] = this ~~ Visitors.asSeqVisitor
 
   def isDefined: Boolean = !isNull
 
-  def isNull: Boolean = {
-    accept[Boolean](Visitors.isNullVisitor)
+  def isNull: Boolean = this ~~ Visitors.isNullVisitor
+
+  def isEmpty: Boolean = this ~~ Visitors.isEmptyVisitor
+
+  def +(other: Value): Value = other
+
+  def selectDynamic(name: String): Value = {
+    asMap.getOrElse(
+      if (name.startsWith("_") && name.length > 1) {
+        name.substring(1)
+      } else {
+        name
+      },
+      Null
+    )
   }
-
-  def isEmpty: Boolean = {
-    accept[Boolean](Visitors.isEmptyVisitor)
-  }
-
-  def merge(other: Value): Value = other
-
-  def selectDynamic[T](name: String) = macro DynamicMacro.selectDynamic[T]
 }
 
 trait ValueVisitor[T] {
@@ -59,32 +54,32 @@ trait ValueVisitor[T] {
 }
 
 case object Null extends Value {
-  override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitNull()
+  override def ~~[T](visitor: ValueVisitor[T]): T = visitor.visitNull()
 }
 
 case class Number(v: BigDecimal) extends AnyVal with Value {
-  override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitNumber(this)
+  override def ~~[T](visitor: ValueVisitor[T]): T = visitor.visitNumber(this)
 }
 
 case class Text(v: String) extends AnyVal with Value {
-  override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitText(this)
+  override def ~~[T](visitor: ValueVisitor[T]): T = visitor.visitText(this)
 }
 
 case class Obj(v: scala.collection.Map[String, Value]) extends AnyVal with Value{
-  override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitObj(this)
+  override def ~~[T](visitor: ValueVisitor[T]): T = visitor.visitObj(this)
 
-  override def merge(other: Value): Value = {
+  override def +(other: Value): Value = {
     other match {
       case o: Obj ⇒
         Obj(v ++ o.v.map {
           case (k, otherV) => k -> v.get(k).map { originalV ⇒
-            originalV.merge(otherV)
+            originalV.+(otherV)
           }.getOrElse {
             otherV
           }
         })
       case _ ⇒
-        super.merge(other)
+        super.+(other)
     }
   }
 }
@@ -100,7 +95,7 @@ object ObjV {
 }
 
 case class Lst(v: Seq[Value]) extends AnyVal with Value{
-  override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitLst(this)
+  override def ~~[T](visitor: ValueVisitor[T]): T = visitor.visitLst(this)
 }
 
 object Lst {
@@ -112,10 +107,10 @@ object LstV { // can't be Lst :-(
 }
 
 case class Bool(v: Boolean) extends AnyVal with Value{
-  override def accept[T](visitor: ValueVisitor[T]): T = visitor.visitBool(this)
+  override def ~~[T](visitor: ValueVisitor[T]): T = visitor.visitBool(this)
 }
 
-private [dynamic] object Visitors {
+private [value] object Visitors {
   val asStringVisitor = new ValueVisitor[String] {
     override def visitBool(d: Bool) = d.v.toString
     override def visitText(d: Text) = d.v

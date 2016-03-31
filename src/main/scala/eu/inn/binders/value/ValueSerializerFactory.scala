@@ -1,4 +1,4 @@
-package eu.inn.binders.dynamic
+package eu.inn.binders.value
 
 import eu.inn.binders.core.{Deserializer, Serializer}
 import eu.inn.binders.naming.{PlainConverter, Converter}

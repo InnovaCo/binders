@@ -1,5 +1,5 @@
 import eu.inn.binders.core.{Serializer, Deserializer}
-import eu.inn.binders.dynamic.Value
+import eu.inn.binders.value.Value
 import eu.inn.binders.naming.Converter
 import java.util.Date
 

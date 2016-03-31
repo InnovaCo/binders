@@ -1,16 +1,16 @@
 package eu.inn.binders
 
-import eu.inn.binders.dynamic.internal.DynamicMacro
+import eu.inn.binders.value.internal.DynamicMacro
 
 import scala.language.experimental.macros
 
-package object dynamic {
+package object value {
   implicit class ValueReader(val value: Value) {
-    def fromDynamic[O]: O = macro DynamicMacro.fromDynamic[O]
+    def fromValue[O]: O = macro DynamicMacro.fromValue[O]
   }
 
   implicit class ValueGenerator[O](val obj: O) {
-    def toDynamic: Value = macro DynamicMacro.toDynamic[O]
+    def toValue: Value = macro DynamicMacro.toValue[O]
   }
 
   implicit def int2number(i: Int): Number = Number(i)

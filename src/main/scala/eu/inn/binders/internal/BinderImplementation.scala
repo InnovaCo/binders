@@ -1,7 +1,7 @@
 package eu.inn.binders.internal
 
 import eu.inn.binders.core.{ImplicitDeserializer, Serializer, ImplicitSerializer}
-import eu.inn.binders.dynamic.Value
+import eu.inn.binders.value.Value
 
 import scala.collection.SeqLike
 import scala.language.reflectiveCalls
@@ -257,17 +257,17 @@ private [binders] trait BinderImplementation {
 
     val block = q"""{
       val $dserOps = ${c.prefix.tree}
-      import eu.inn.binders.dynamic._
+      import eu.inn.binders.value._
       import scala.util._
-      val $v = $dserOps.deserializer.unbind[eu.inn.binders.dynamic.Value]
+      val $v = $dserOps.deserializer.unbind[eu.inn.binders.value.Value]
       val $leftIsBetter = eu.inn.binders.internal.Helpers.getConformity($leftDStr,$v) >=
         eu.inn.binders.internal.Helpers.getConformity($rightDStr,$v)
 
-      val $r = Try (if ($leftIsBetter) Left($v.fromDynamic[$left]) else Right($v.fromDynamic[$right]))
+      val $r = Try (if ($leftIsBetter) Left($v.fromValue[$left]) else Right($v.fromValue[$right]))
         match {
           case Success($r1) => $r1
           case Failure($e1) =>
-            Try (if ($leftIsBetter) Right($v.fromDynamic[$right]) else Left($v.fromDynamic[$left]))
+            Try (if ($leftIsBetter) Right($v.fromValue[$right]) else Left($v.fromValue[$left]))
             match {
               case Success($r2) => $r2
               case Failure($e2) =>
@@ -354,7 +354,7 @@ private [binders] trait BinderImplementation {
         } else if (parameter.typeSignature <:< typeOf[Option[_]])
           q"$parameter = $varName.flatten"
         else if (parameter.typeSignature <:< typeOf[Value])
-          q"$parameter = $varName.getOrElse(eu.inn.binders.dynamic.Null)"
+          q"$parameter = $varName.getOrElse(eu.inn.binders.value.Null)"
         else if (parameter.typeSignature <:< typeOf[Map[_,_]])
           q"$parameter = $varName.getOrElse(Map.empty)"
         else if (parameter.typeSignature <:< typeOf[Vector[_]])

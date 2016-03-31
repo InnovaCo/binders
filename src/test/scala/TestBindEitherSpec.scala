@@ -1,5 +1,4 @@
 import eu.inn.binders._
-import eu.inn.binders.dynamic.{Lst, Text, Number}
 import eu.inn.binders.naming.PlainConverter
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar.mock
@@ -23,7 +22,7 @@ class TestBindEitherSpec extends FlatSpec with Matchers {
   }
 
   "Either[Long,String] " should " unbind" in {
-    import eu.inn.binders.dynamic._
+    import eu.inn.binders.value._
     val m = mock[TestDeserializer[PlainConverter]]
     when(m.readDynamic()).thenReturn(Number(123456l))
     val i1 = m.unbind[Either[Long,String]]
@@ -34,7 +33,7 @@ class TestBindEitherSpec extends FlatSpec with Matchers {
     when(m.readDynamic()).thenReturn(Text("0"))
     val i3 = m.unbind[Either[Long,Option[String]]]
 
-    when(m.readDynamic()).thenReturn(Lst(Seq(1,2,3).map(_.toDynamic)))
+    when(m.readDynamic()).thenReturn(Lst(Seq(1,2,3).map(_.toValue)))
     val i4 = m.unbind[Either[TestClass1,Seq[Int]]]
 
     assert (i1 === Left(123456))

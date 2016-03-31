@@ -1,7 +1,7 @@
 package eu.inn.binders.internal
 
 import eu.inn.binders.core.FieldNotFoundException
-import eu.inn.binders.dynamic._
+import eu.inn.binders.value._
 
 object Helpers {
   def getFieldOrThrow[T](x: Option[T], fieldName: String): T = {
@@ -11,13 +11,13 @@ object Helpers {
   }
 
   def getConformity(typ:String, value: Value): Int= {
-    value.accept(new ValueVisitor[Int] {
+    value ~~ new ValueVisitor[Int] {
       override def visitNumber(d: Number): Int = if (typ == "Number") 100 else 0
       override def visitBool(d: Bool): Int = if (typ == "Bool") 100 else 0
       override def visitObj(d: Obj): Int = if (typ == "Obj") 100 else 0
       override def visitText(d: Text): Int = if (typ == "Text") 100 else 0
       override def visitLst(d: Lst): Int = if (typ == "Lst") 100 else 0
       override def visitNull(): Int = 0
-    })
+    }
   }
 }
