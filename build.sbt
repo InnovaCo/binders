@@ -10,11 +10,11 @@ scalaVersion := "2.11.7"
 
 crossScalaVersions := Seq("2.11.7", "2.10.5")
 
-libraryDependencies += "org.mockito" % "mockito-all" % "1.10.19" % "test"
-
-libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
-
-libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.1" % "test"
+libraryDependencies ++= Seq(
+  "org.mockito" % "mockito-all" % "1.10.19" % "test",
+  "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+  "org.scalatest" %% "scalatest" % "2.2.1" % "test"
+)
 
 libraryDependencies := {
   CrossVersion.partialVersion(scalaVersion.value) match {
