@@ -47,6 +47,27 @@ class TestCollectionsInClassSpec extends FlatSpec with Matchers {
     verifyNoMoreInteractions(m)
   }
 
+  "case class array field " should " be serialized by name " in {
+    val m = mock[TestSerializer[PlainConverter]]
+    val m1 = mock[TestSerializer[PlainConverter]]
+
+    when(m.getFieldSerializer("array")).thenReturn(Some(m1))
+
+    val col = TestArrayCls(Array("100500", "abyrvalg"))
+    m.bind(col)
+
+    verify(m).beginObject()
+    verify(m).getFieldSerializer("array")
+    verify(m1).beginArray()
+    verify(m1).writeString("100500")
+    verify(m1).writeString("abyrvalg")
+    verify(m1).endArray()
+    verifyNoMoreInteractions(m1)
+
+    verify(m).endObject()
+    verifyNoMoreInteractions(m)
+  }
+
   "empty class collection fields " should " NOT be skipped according to option" in {
     val m = mock[TestSerializer[PlainConverter]]
     val m1 = mock[TestSerializer[PlainConverter]]
@@ -148,10 +169,7 @@ class TestCollectionsInClassSpec extends FlatSpec with Matchers {
     val mci = List()
     when(m.iterator()).thenReturn(mci.toIterator)
 
-    //val x: Iterator[String]
-    //x.toArray
-
     val t = m.unbind[TestArrayCls]
-    t shouldBe TestArrayCls(Array[String]())
+    t.array.length shouldBe 0
   }
 }

@@ -1,13 +1,13 @@
 package eu.inn.binders.internal
 
-import eu.inn.binders.core.{ImplicitDeserializer, Serializer, ImplicitSerializer}
+import eu.inn.binders.core.{ImplicitDeserializer, ImplicitSerializer}
+import eu.inn.binders.naming.Converter
 import eu.inn.binders.value.Value
 
 import scala.collection.SeqLike
+import scala.language.experimental.macros
 import scala.language.reflectiveCalls
 import scala.reflect.macros.Context
-import language.experimental.macros
-import eu.inn.binders.naming.Converter
 
 private [binders] trait BinderImplementation {
   val c: Context
@@ -44,7 +44,7 @@ private [binders] trait BinderImplementation {
         if (tpe <:< typeOf[Map[_,_]]){
           bindMap(value)
         }
-        else if (tpe <:< typeOf[TraversableOnce[_]]){
+        else if (tpe <:< typeOf[TraversableOnce[_]] || tpe <:< typeOf[Array[_]]){
           bindTraversable[S, O](value)
         }
         else if (tpe.typeSymbol.companionSymbol != NoSymbol){
@@ -209,7 +209,7 @@ private [binders] trait BinderImplementation {
               if (tpe <:< typeOf[Map[_, _]]) {
                 unbindMap[O]
               }
-              else if (tpe <:< typeOf[TraversableOnce[_]]) {
+              else if (tpe <:< typeOf[TraversableOnce[_]] || tpe <:< typeOf[Array[_]]) {
                 unbindIterable[D, O]
               }
               else {
