@@ -10,6 +10,7 @@ case class TestStringListCls(list: List[String])
 case class TestStringVectorCls(list: Vector[String])
 case class TestStringIndexedSeqCls(list: IndexedSeq[String])
 case class TestStringSetCls(list: Set[String])
+case class TestArrayCls(array: Array[String])
 
 class TestCollectionsInClassSpec extends FlatSpec with Matchers {
 
@@ -140,5 +141,17 @@ class TestCollectionsInClassSpec extends FlatSpec with Matchers {
 
     val t = m.unbind[TestStringSetCls]
     assert(t === TestStringSetCls(Set.empty))
+  }
+
+  "empty Array in case class " should " be deserialized by names " in {
+    val m = mock[TestDeserializer[PlainConverter]]
+    val mci = List()
+    when(m.iterator()).thenReturn(mci.toIterator)
+
+    //val x: Iterator[String]
+    //x.toArray
+
+    val t = m.unbind[TestArrayCls]
+    t shouldBe TestArrayCls(Array[String]())
   }
 }

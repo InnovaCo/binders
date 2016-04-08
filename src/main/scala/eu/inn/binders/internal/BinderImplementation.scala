@@ -367,6 +367,8 @@ private [binders] trait BinderImplementation {
           q"$parameter = $varName.getOrElse(List.empty)"
         else if (parameter.typeSignature <:< typeOf[Seq[_]])
           q"$parameter = $varName.getOrElse(Seq.empty)"
+        else if (parameter.typeSignature <:< typeOf[Array[_]])
+          q"$parameter = $varName.getOrElse(Array())"
         else
           q"$parameter = $varName.getOrElse(throw new eu.inn.binders.core.FieldNotFoundException($fieldName))"
       )
@@ -424,6 +426,9 @@ private [binders] trait BinderImplementation {
       }else
       if (ct <:< typeOf[Seq[_]]) {
         Some("toList") // don't use toSeq which creates lazy stream sequence
+      }else
+      if (ct <:< typeOf[Array[_]]) {
+        Some("toArray")
       }
       else
         None
@@ -649,6 +654,7 @@ private [binders] trait BinderImplementation {
                 if (t <:< typeOf[Option[_]]) Some(List(t))
                 else if (t <:< typeOf[Seq[_]]) Some(List(t))
                 else if (t <:< typeOf[Set[_]]) Some(List(t))
+                else if (t <:< typeOf[Array[_]]) Some(List(t))
                 else if (t <:< typeOf[Map[_, _]]) Some(List(t))
                 else if (t <:< typeOf[Product]) Some(args)
               case _ => None
