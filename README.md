@@ -8,9 +8,9 @@
 
 Usage example: 
 
-[binders-cassandra](https://github.com/InnovaCo/binders-cassandra)
-[binders-json](https://github.com/InnovaCo/binders-json)
-[binders-typesafef-config](https://github.com/InnovaCo/binders-typesafef-config)
+* [binders-cassandra](https://github.com/InnovaCo/binders-cassandra)
+* [binders-json](https://github.com/InnovaCo/binders-json)
+* [binders-typesafef-config](https://github.com/InnovaCo/binders-typesafef-config)
 
 
 ## License
