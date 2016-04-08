@@ -1,13 +1,13 @@
 package eu.inn.binders.internal
 
-import eu.inn.binders.core.{ImplicitDeserializer, Serializer, ImplicitSerializer}
+import eu.inn.binders.core.{ImplicitDeserializer, ImplicitSerializer}
+import eu.inn.binders.naming.Converter
 import eu.inn.binders.value.Value
 
 import scala.collection.SeqLike
+import scala.language.experimental.macros
 import scala.language.reflectiveCalls
 import scala.reflect.macros.Context
-import language.experimental.macros
-import eu.inn.binders.naming.Converter
 
 private [binders] trait BinderImplementation {
   val c: Context
@@ -44,7 +44,7 @@ private [binders] trait BinderImplementation {
         if (tpe <:< typeOf[Map[_,_]]){
           bindMap(value)
         }
-        else if (tpe <:< typeOf[TraversableOnce[_]]){
+        else if (tpe <:< typeOf[TraversableOnce[_]] || tpe <:< typeOf[Array[_]]){
           bindTraversable[S, O](value)
         }
         else if (tpe.typeSymbol.companionSymbol != NoSymbol){
@@ -209,7 +209,7 @@ private [binders] trait BinderImplementation {
               if (tpe <:< typeOf[Map[_, _]]) {
                 unbindMap[O]
               }
-              else if (tpe <:< typeOf[TraversableOnce[_]]) {
+              else if (tpe <:< typeOf[TraversableOnce[_]] || tpe <:< typeOf[Array[_]]) {
                 unbindIterable[D, O]
               }
               else {
@@ -367,6 +367,8 @@ private [binders] trait BinderImplementation {
           q"$parameter = $varName.getOrElse(List.empty)"
         else if (parameter.typeSignature <:< typeOf[Seq[_]])
           q"$parameter = $varName.getOrElse(Seq.empty)"
+        else if (parameter.typeSignature <:< typeOf[Array[_]])
+          q"$parameter = $varName.getOrElse(Array())"
         else
           q"$parameter = $varName.getOrElse(throw new eu.inn.binders.core.FieldNotFoundException($fieldName))"
       )
@@ -424,6 +426,9 @@ private [binders] trait BinderImplementation {
       }else
       if (ct <:< typeOf[Seq[_]]) {
         Some("toList") // don't use toSeq which creates lazy stream sequence
+      }else
+      if (ct <:< typeOf[Array[_]]) {
+        Some("toArray")
       }
       else
         None
@@ -649,6 +654,7 @@ private [binders] trait BinderImplementation {
                 if (t <:< typeOf[Option[_]]) Some(List(t))
                 else if (t <:< typeOf[Seq[_]]) Some(List(t))
                 else if (t <:< typeOf[Set[_]]) Some(List(t))
+                else if (t <:< typeOf[Array[_]]) Some(List(t))
                 else if (t <:< typeOf[Map[_, _]]) Some(List(t))
                 else if (t <:< typeOf[Product]) Some(args)
               case _ => None

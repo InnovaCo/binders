@@ -47,6 +47,16 @@ class TestCollectionsSpec extends FlatSpec with Matchers {
     verify(m).endArray()
   }
 
+  "Array of integers " should " be bound" in {
+    val m = mock[TestSerializerWithGenerics[PlainConverter]]
+    val t = Array(123456, 7890)
+    m.bind(t)
+    verify(m).beginArray()
+    verify(m).writeInt(123456)
+    verify(m).writeInt(7890)
+    verify(m).endArray()
+  }
+
   "Seq of integers without explicit type " should " be bound" in {
     val m = mock[TestSerializerWithGenerics[PlainConverter]]
     m.bind(Seq(123456, 7890))
@@ -94,6 +104,12 @@ class TestCollectionsSpec extends FlatSpec with Matchers {
     when(m.readList[Int]()).thenReturn(List(123456, 7890))
     val l = m.unbind[List[Int]]
     assert (l === List(123456, 7890))
+  }
+
+  "Array of integers " should " unbind" in {
+    val m = getMockList
+    val l: Array[Int] = m.unbind[Array[Int]]
+    assert (l.toSeq === Seq(123456, 7890))
   }
 
   /* todo: fix this:
