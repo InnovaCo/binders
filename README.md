@@ -4,7 +4,7 @@
 
 [ Latest Releases ](https://oss.sonatype.org/#nexus-search;gav~eu.inn~binders_*~~~)
 
-**Binders** is a utility library that allows to create Scala case class serializers/deserializers:
+**Binders** is an utility library that allows to create Scala case class serializers/deserializers:
 
 Usage example: 
 
