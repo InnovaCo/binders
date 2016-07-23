@@ -106,8 +106,35 @@ object LstV { // can't be Lst :-(
   def apply(seq: Value*): Lst = Lst(seq)
 }
 
-case class Bool(v: Boolean) extends AnyVal with Value{
+trait Bool extends Value with Product {
+  val v: Boolean
   override def ~~[T](visitor: ValueVisitor[T]): T = visitor.visitBool(this)
+  def copy(o: Boolean): Bool
+  override def equals(obj: scala.Any): Boolean = obj match {
+    case null ⇒ false
+    case Bool(o) ⇒ v == o
+    case b: Boolean ⇒ v == b
+    case _ ⇒ false
+  }
+  override def hashCode(): Int = if(v) 1 else 0
+  override def toString: String = s"Bool($v)"
+  override def productArity: Int = 1
+  override def productElement(n: Int): Any = if (n == 0) v else throw new IndexOutOfBoundsException(s"$n is out of bounds")
+}
+
+object Bool {
+  def apply(v: Boolean): Bool = if(v) True else False
+  def unapply(b: Bool): Option[Boolean] = Some(b.v)
+}
+
+case object True extends Bool {
+  val v: Boolean = true
+  def copy(o: Boolean) = Bool(o)
+}
+
+case object False extends Bool {
+  val v: Boolean = false
+  def copy(o: Boolean) = Bool(o)
 }
 
 private [value] object Visitors {
