@@ -161,9 +161,14 @@ class TestDynamicSpec extends FlatSpec with Matchers {
       case Obj(map) ⇒ // fine
     }
 
-    val lst = LstV("a",1,false)
+    val lst: Value = LstV("a",1,false)
     lst match {
       case Lst(seq) ⇒ // fine
+      case Bool(_) ⇒ fail
+      case Null ⇒ fail
+      case Number(_) ⇒ fail
+      case Obj(_) ⇒ fail
+      case Text(_) ⇒ fail
     }
   }
 

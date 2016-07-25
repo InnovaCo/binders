@@ -5,7 +5,7 @@ import java.util.Date
 import scala.language.dynamics
 import scala.language.experimental.macros
 
-trait Value extends Any with Dynamic {
+sealed trait Value extends Any with Dynamic {
   def ~~[T](visitor: ValueVisitor[T]): T
 
   def asString: String = this ~~ Visitors.asStringVisitor
