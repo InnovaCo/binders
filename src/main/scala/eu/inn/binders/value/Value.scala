@@ -30,7 +30,23 @@ sealed trait Value extends Any with Dynamic {
 
   def isEmpty: Boolean = this ~~ Visitors.isEmptyVisitor
 
-  def +(other: Value): Value = other
+  def +(other: Value): Value = throw new UnsupportedOperationException(s"$this + $other")
+  def -(other: Value): Value = throw new UnsupportedOperationException(s"$this - $other")
+  def ++(other: Value): Value = throw new UnsupportedOperationException(s"$this ++ $other")
+  def --(other: Value): Value = throw new UnsupportedOperationException(s"$this -- $other")
+  def *(other: Value): Value = throw new UnsupportedOperationException(s"$this * $other")
+  def /(other: Value): Value = throw new UnsupportedOperationException(s"$this / $other")
+  def %(other: Value): Value = throw new UnsupportedOperationException(s"$this % $other")
+  def |(other: Value): Value = throw new UnsupportedOperationException(s"$this | $other")
+  def ^(other: Value): Value = throw new UnsupportedOperationException(s"$this ^ $other")
+  def &(other: Value): Value = throw new UnsupportedOperationException(s"$this & $other")
+  def >(other: Value): Boolean = throw new UnsupportedOperationException(s"$this > $other")
+  def <(other: Value): Boolean = throw new UnsupportedOperationException(s"$this < $other")
+  def >=(other: Value): Boolean = throw new UnsupportedOperationException(s"$this >= $other")
+  def <=(other: Value): Boolean = throw new UnsupportedOperationException(s"$this <= $other")
+  def contains(other: Value): Boolean = throw new UnsupportedOperationException(s"$this contains $other")
+  def unary_! : Value = throw new UnsupportedOperationException(s"!$this")
+  def unary_- : Value = throw new UnsupportedOperationException(s"-$this")
 
   def selectDynamic(name: String): Value = {
     asMap.getOrElse(
@@ -55,14 +71,96 @@ trait ValueVisitor[T] {
 
 case object Null extends Value {
   override def ~~[T](visitor: ValueVisitor[T]): T = visitor.visitNull()
+
+  override def +(other: Value): Value = Null
+  override def -(other: Value): Value = Null
+  override def *(other: Value): Value = Null
+  override def /(other: Value): Value = Null
+  override def %(other: Value): Value = Null
+  override def >(other: Value): Boolean = false
+  override def <(other: Value): Boolean = false
+  override def >=(other: Value): Boolean = other == Null
+  override def <=(other: Value): Boolean = other == Null
+  override def contains(other: Value): Boolean = false
+  override def unary_! : Value = Null
+  override def unary_- : Value = Null
 }
 
 case class Number(v: BigDecimal) extends AnyVal with Value {
   override def ~~[T](visitor: ValueVisitor[T]): T = visitor.visitNumber(this)
+
+  override def +(other: Value): Value = if (other != Null)
+    v + other.asBigDecimal
+  else
+    Null
+
+  override def -(other: Value): Value = if (other != Null)
+    v - other.asBigDecimal
+  else
+    Null
+
+  override def *(other: Value): Value = if (other != Null)
+    v * other.asBigDecimal
+  else
+    Null
+
+  override def /(other: Value): Value = if (other != Null)
+    v / other.asBigDecimal
+  else
+    Null
+
+  override def %(other: Value): Value = if (other != Null)
+    v % other.asBigDecimal
+  else
+    Null
+
+  override def |(other: Value): Value = if (other != Null)
+    BigDecimal(v.toBigInt() | other.asBigDecimal.toBigInt())
+  else
+    Null
+
+  override def &(other: Value): Value = if (other != Null)
+    BigDecimal(v.toBigInt() & other.asBigDecimal.toBigInt())
+  else
+    Null
+
+  override def ^(other: Value): Value = if (other != Null)
+    BigDecimal(v.toBigInt() ^ other.asBigDecimal.toBigInt())
+  else
+    Null
+
+  override def >(other: Value): Boolean = if (other != Null)
+    v > other.asBigDecimal
+  else
+    false
+
+  override def <(other: Value): Boolean = if (other != Null)
+    v < other.asBigDecimal
+  else
+    false
+
+  override def >=(other: Value): Boolean = if (other != Null)
+    v >= other.asBigDecimal
+  else
+    false
+
+  override def <=(other: Value): Boolean = if (other != Null)
+    v <= other.asBigDecimal
+  else
+    false
+
+  override def unary_! : Value = BigDecimal(~v.toBigInt())
+  override def unary_- : Value = -v
 }
 
 case class Text(v: String) extends AnyVal with Value {
   override def ~~[T](visitor: ValueVisitor[T]): T = visitor.visitText(this)
+  override def +(other: Value): Value = v + other.asString
+  override def >(other: Value): Boolean = v > other.asString
+  override def <(other: Value): Boolean = v < other.asString
+  override def >=(other: Value): Boolean = v >= other.asString
+  override def <=(other: Value): Boolean = v <= other.asString
+  override def contains(other: Value): Boolean = v.contains(other.asString)
 }
 
 case class Obj(v: scala.collection.Map[String, Value]) extends AnyVal with Value{
@@ -73,7 +171,12 @@ case class Obj(v: scala.collection.Map[String, Value]) extends AnyVal with Value
       case o: Obj ⇒
         Obj(v ++ o.v.map {
           case (k, otherV) => k -> v.get(k).map { originalV ⇒
-            originalV.+(otherV)
+            if (originalV.isInstanceOf[Obj]) {
+              originalV.+(otherV)
+            }
+            else {
+              otherV
+            }
           }.getOrElse {
             otherV
           }
@@ -82,6 +185,12 @@ case class Obj(v: scala.collection.Map[String, Value]) extends AnyVal with Value
         super.+(other)
     }
   }
+
+  override def -(other: Value): Value = {
+    Obj(v.filterNot(kv ⇒ other.asMap.contains(kv._1)))
+  }
+
+  override def contains(other: Value): Boolean = v.contains(other.asString)
 }
 
 object Obj {
@@ -96,6 +205,27 @@ object ObjV {
 
 case class Lst(v: Seq[Value]) extends AnyVal with Value{
   override def ~~[T](visitor: ValueVisitor[T]): T = visitor.visitLst(this)
+
+  override def +(other: Value): Value = v :+ other
+  override def -(other: Value): Value = {
+    v.diff(Seq(other))
+  }
+
+  override def ++(other: Value): Value = {
+    other match {
+      case Lst(seqOther) ⇒ v ++ seqOther
+      case _ ⇒ super.++(other)
+    }
+  }
+
+  override def --(other: Value): Value = {
+    other match {
+      case Lst(seqOther) ⇒ v diff seqOther
+      case _ ⇒ super.--(other)
+    }
+  }
+
+  override def contains(other: Value): Boolean = v.contains(other)
 }
 
 object Lst {
@@ -109,6 +239,17 @@ object LstV { // can't be Lst :-(
 trait Bool extends Value with Product {
   val v: Boolean
   override def ~~[T](visitor: ValueVisitor[T]): T = visitor.visitBool(this)
+
+  override def |(other: Value): Value = v || other.asBoolean
+  override def &(other: Value): Value = v && other.asBoolean
+  override def ^(other: Value): Value = v ^ other.asBoolean
+  override def >(other: Value): Boolean = v > other.asBoolean
+  override def <(other: Value): Boolean = v < other.asBoolean
+  override def >=(other: Value): Boolean = v >= other.asBoolean
+  override def <=(other: Value): Boolean = v <= other.asBoolean
+  override def unary_! : Value = !v
+
+  // product methods
   def copy(o: Boolean): Bool
   override def equals(obj: scala.Any): Boolean = obj match {
     case null ⇒ false

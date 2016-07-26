@@ -1,6 +1,6 @@
 
 
-import eu.inn.binders.value.{Number, _}
+import eu.inn.binders.value.{Number, True, _}
 import org.scalatest._
 
 case class TestDynamic(a:Int,b:String,c:Boolean)
@@ -125,11 +125,18 @@ class TestDynamicSpec extends FlatSpec with Matchers {
     //i shouldBe Text("100500")
   }
 
-  "DynamicValue " should " merge (+) " in {
+  "Obj " should " merge (+) " in {
     val value1 = ObjV("a" -> 1, "b" -> "ho", "c" -> true, "d" → 5, "e" → "kl")
     val value2 = ObjV("a" -> 2, "b" -> "no", "c" -> false, "d" → Null)
     val value3 = value1 + value2
     value3 should equal(ObjV("a" -> 2, "b" -> "no", "c" -> false, "d" → Null, "e" → Text("kl")))
+  }
+
+  "Obj " should " subtract (-) " in {
+    val value1 = ObjV("a" -> 1, "b" -> "ho", "c" -> true, "d" → 5, "e" → "kl")
+    val value2 = ObjV("a" -> Null, "d" → 8)
+    val value3 = value1 - value2
+    value3 should equal(ObjV("b" -> "ho", "c" -> true, "e" → Text("kl")))
   }
 
   "Obj " should " preserve order of fields " in {
@@ -170,6 +177,101 @@ class TestDynamicSpec extends FlatSpec with Matchers {
       case Obj(_) ⇒ fail
       case Text(_) ⇒ fail
     }
+  }
+
+  "Number operators " should "work" in {
+    Number(2) + Number(3) shouldBe Number(5)
+    Number(3) - Number(1) shouldBe Number(2)
+    Number(3) * Number(2) shouldBe Number(6)
+    Number(6) / Number(2) shouldBe Number(3)
+    Number(5) % Number(4) shouldBe Number(1)
+    Number(5) > Number(4) shouldBe true
+    Number(5) < Number(4) shouldBe false
+    Number(4) > Number(5) shouldBe false
+    Number(4) < Number(5) shouldBe true
+    Number(5) > Number(5) shouldBe false
+    Number(5) < Number(5) shouldBe false
+    Number(5) >= Number(4) shouldBe true
+    Number(5) <= Number(4) shouldBe false
+    Number(4) >= Number(5) shouldBe false
+    Number(4) <= Number(5) shouldBe true
+    Number(5) >= Number(5) shouldBe true
+    Number(5) <= Number(5) shouldBe true
+
+    Number(1) | Number(2) shouldBe Number(1|2)
+    Number(5) & Number(6) shouldBe Number(5&6)
+    Number(5) ^ Number(6) shouldBe Number(5^6)
+
+    !Number(5) shouldBe Number(~5)
+    -Number(5) shouldBe Number(-5)
+  }
+
+  "Text operators " should "work" in {
+    Text("a") + Text("b") shouldBe Text("ab")
+    Text("a") + Number(10) shouldBe Text("a10")
+    Text("b") > Text("a") shouldBe true
+    Text("b") < Text("a") shouldBe false
+    Text("a") > Text("b") shouldBe false
+    Text("a") < Text("b") shouldBe true
+    Text("b") > Text("b") shouldBe false
+    Text("b") < Text("b") shouldBe false
+    Text("b") >= Text("a") shouldBe true
+    Text("b") <= Text("a") shouldBe false
+    Text("a") >= Text("b") shouldBe false
+    Text("a") <= Text("b") shouldBe true
+    Text("b") >= Text("b") shouldBe true
+    Text("b") <= Text("b") shouldBe true
+    Text("abc").contains("bc") shouldBe true
+    Text("abc").contains("xbc") shouldBe false
+  }
+
+  "Null operators " should "work" in {
+    Null + Number(3) shouldBe Null
+    Null - Number(1) shouldBe Null
+    Null * Number(2) shouldBe Null
+    Null / Number(2) shouldBe Null
+    Null % Number(4) shouldBe Null
+    Null > Number(4) shouldBe false
+    Null < Number(4) shouldBe false
+    Null >= Number(4) shouldBe false
+    Null <= Number(4) shouldBe false
+    Null >= Null shouldBe true
+    Null <= Null shouldBe true
+    !Null shouldBe Null
+    -Null shouldBe Null
+  }
+
+  "Lst operators " should "work" in {
+    LstV(1,2,3) ++ LstV(4,5) shouldBe LstV(1,2,3,4,5)
+    LstV(1,2,3) + 4 shouldBe LstV(1,2,3,4)
+    LstV(1,2,3) -- LstV(2) shouldBe LstV(1,3)
+    LstV(1,2,3) - 2 shouldBe LstV(1,3)
+    LstV(1,2,3).contains(2) shouldBe true
+    LstV(1,2,3).contains(4) shouldBe false
+  }
+
+  "Obj operators " should "work" in {
+    ObjV("a" → 1).contains("a") shouldBe true
+    ObjV("a" → 1).contains("b") shouldBe false
+  }
+
+  "Bool operators " should "work" in {
+    True > False shouldBe true
+    !True shouldBe False
+    !False shouldBe True
+    True > False shouldBe true
+    True < False shouldBe false
+    True >= False shouldBe true
+    True <= False shouldBe false
+    True >= True shouldBe true
+    True <= True shouldBe true
+    True & True shouldBe True
+    True | False shouldBe True
+    True ^ True shouldBe False
+    True & 0 shouldBe False
+    False & 1 shouldBe False
+    True & 1 shouldBe True
+    False | 1 shouldBe True
   }
 
   def toDynamicNumber(kv: (String, Int)) = {
