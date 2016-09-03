@@ -8,8 +8,7 @@ if [[ "$TRAVIS_PULL_REQUEST" == "false" && "$TRAVIS_BRANCH" == "master" ]]; then
   if grep "version\s*:=.*SNAPSHOT" build.sbt; then
     sbt +test +publishSigned
   else
-    #sbt 'set version := version.value + "." + System.getenv("TRAVIS_BUILD_NUMBER")' +test +publishSigned sonatypeReleaseAll
-    echo test1
+    sbt +test +publishSigned sonatypeReleaseAll
   fi
 else
   sbt +test
