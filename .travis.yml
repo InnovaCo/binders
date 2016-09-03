@@ -9,3 +9,8 @@ env:
   - secure: A4RkKzHM5oHvMkKRJT6M5hle5GgPtzCtqCbHn7YIHbkve+zEka1zWq7jXk76MgYSY0ra472CCzYdBglDmBSHTwwGRPXZsgdjinPyxZgOBZSndW2UQo1IqYFXSO0xh2fxsUuwAGK39Uhak1/Qz6p4VqDI6FtFn1vxSEeGstk3dtM=
   - secure: TZ1p3YNM+SlxovbCfBIDFQ729Sz3M4IfbQBg7nf2+2/mL3rLXJ/AE4v3MpEYxeZTFDYJsf1mQ/0L1roAxJelkPNtdSDzEy/R1H4t6/JYgg/Dw+ZvmwuiV804ebF5n2LVCsVK/qmh43iTBbYPNXQ21OEarL1Anh5vnNJhR7o+ZkM=
 script: $TRAVIS_BUILD_DIR/travis/build.sh
+cache:
+  directories:
+  - $HOME/.m2
+  - $HOME/.ivy2
+  - $HOME/.sbt
